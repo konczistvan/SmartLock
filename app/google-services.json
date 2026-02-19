@@ -1,0 +1,87 @@
+{
+  "project_info": {
+    "project_number": "348362173232",
+    "firebase_url": "https://smartlock-system-f76d3-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "smartlock-system-f76d3",
+    "storage_bucket": "smartlock-system-f76d3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:348362173232:android:e94e0625a59164f66876f5",
+        "android_client_info": {
+          "package_name": "com.example.smartlock"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-rMHhCgvYl5A5jSYpbV2IUYs3aR5-rr4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:348362173232:android:5889c8f2a0569d186876f5",
+        "android_client_info": {
+          "package_name": "com.example.smartlock1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-rMHhCgvYl5A5jSYpbV2IUYs3aR5-rr4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:348362173232:android:ee18d933237f8b546876f5",
+        "android_client_info": {
+          "package_name": "com.example.smartlock2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-rMHhCgvYl5A5jSYpbV2IUYs3aR5-rr4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:348362173232:android:b9afc38b392dc4596876f5",
+        "android_client_info": {
+          "package_name": "com.smartlock"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-rMHhCgvYl5A5jSYpbV2IUYs3aR5-rr4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
