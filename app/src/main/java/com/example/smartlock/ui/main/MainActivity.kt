@@ -18,7 +18,6 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 
 class MainActivity : AppCompatActivity() {
 
-    // TEST konstansok – majd login screen-re kerülnek
     private val TEST_EMAIL = "admin@smartlock.com"
     private val TEST_PASS  = "123456"
 
@@ -39,9 +38,9 @@ class MainActivity : AppCompatActivity() {
     ) { permissions ->
         val allGranted = permissions.entries.all { it.value }
         if (allGranted) {
-            Toast.makeText(this, "Engedélyek megadva", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Permissions granted", Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(this, "Engedély szükséges!", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Permissions required!", Toast.LENGTH_LONG).show()
             switchAutoUnlock.isChecked = false
             switchGeofence.isChecked = false
         }
@@ -121,7 +120,7 @@ class MainActivity : AppCompatActivity() {
         viewModel.toastMessage.observe(this) { message ->
             if (message != null) {
                 Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-                viewModel.onToastShown() // Nullázzuk, hogy ne jelenjen meg újra
+                viewModel.onToastShown()
             }
         }
 
@@ -159,7 +158,7 @@ class MainActivity : AppCompatActivity() {
                 if (hasLocationPermission()) {
                     viewModel.fetchLockLocation()
                     viewModel.startLocationUpdates(this)
-                    tvGeofenceStatus.text = "GPS: keresés..."
+                    tvGeofenceStatus.text = "GPS: searching..."
                 } else {
                     requestLocationPermissions()
                     switchGeofence.isChecked = false

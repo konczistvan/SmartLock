@@ -16,18 +16,18 @@ class AuthRepository {
         FirebaseClient.auth
             .signInWithEmailAndPassword(email, password)
             .addOnSuccessListener {
-                Log.d(TAG, "Bejelentkezés sikeres: $email")
+                Log.d(TAG, "Login successful: $email")
                 onSuccess()
             }
             .addOnFailureListener { e ->
-                Log.e(TAG, "Bejelentkezési hiba: ${e.message}")
-                onFailure(e.message ?: "Ismeretlen hiba")
+                Log.e(TAG, "Login error: ${e.message}")
+                onFailure(e.message ?: "Unknown error")
             }
     }
 
     fun logout() {
         FirebaseClient.auth.signOut()
-        Log.d(TAG, "Kijelentkezve")
+        Log.d(TAG, "Logged out")
     }
 
     fun isLoggedIn(): Boolean {

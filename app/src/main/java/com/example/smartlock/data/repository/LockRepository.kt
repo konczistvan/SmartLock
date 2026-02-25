@@ -20,10 +20,10 @@ class LockRepository {
             .getReference("locks/$lockId/command")
             .setValue(command)
             .addOnSuccessListener {
-                Log.d(TAG, "Parancs elküldve: $command → $lockId")
+                Log.d(TAG, "Command sent: $command → $lockId")
             }
             .addOnFailureListener { e ->
-                Log.e(TAG, "Parancs küldési hiba: ${e.message}")
+                Log.e(TAG, "Command sending error: ${e.message}")
             }
     }
 
@@ -40,12 +40,12 @@ class LockRepository {
         statusListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val status = snapshot.getValue(String::class.java) ?: "UNKNOWN"
-                Log.d(TAG, "Státusz frissült: $lockId → $status")
+                Log.d(TAG, "Status updated: $lockId → $status")
                 onStatusChanged(LockModel(id = lockId, status = status))
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e(TAG, "Státusz figyelés hiba: ${error.message}")
+                Log.e(TAG, "Status listening error: ${error.message}")
                 onError(error.message)
             }
         }
@@ -63,7 +63,7 @@ class LockRepository {
 
         statusListener = null
         currentListenedLockId = null
-        Log.d(TAG, "Státusz figyelés leállítva: $lockId")
+        Log.d(TAG, "Status listening stopped: $lockId")
     }
 
     fun fetchLockLocation(
@@ -80,7 +80,7 @@ class LockRepository {
             .addOnSuccessListener { snapshot ->
                 val lat = snapshot.child("lat").getValue(Double::class.java)
                 val lng = snapshot.child("lng").getValue(Double::class.java)
-                Log.d(TAG, "Koordináták lekérve: lat=$lat, lng=$lng ($lockId)")
+                Log.d(TAG, "Coordinates fetched: lat=$lat, lng=$lng ($lockId)")
 
                 if (lat != null && lng != null) {
                     val location = Location("firebase").apply {
@@ -89,14 +89,14 @@ class LockRepository {
                     }
                     onSuccess(location)
                 } else {
-                    val msg = "Hiányzó koordináták: locks/$lockId/location"
+                    val msg = "Missing coordinates: locks/$lockId/location"
                     Log.w(TAG, msg)
                     onFailure(msg)
                 }
             }
             .addOnFailureListener { e ->
-                Log.e(TAG, "Koordináta lekérési hiba: ${e.message}")
-                onFailure(e.message ?: "Ismeretlen hiba")
+                Log.e(TAG, "Coordinate fetching error: ${e.message}")
+                onFailure(e.message ?: "Unknown error")
             }
     }
 }

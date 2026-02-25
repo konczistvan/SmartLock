@@ -46,7 +46,7 @@ class MainViewModel : ViewModel() {
     private val PROXIMITY_THRESHOLD = -80
     private val UNLOCK_COOLDOWN_MS  = 10000L
 
-    private val _statusText = MutableLiveData<String>("Betöltés...")
+    private val _statusText = MutableLiveData<String>("Loading...")
     val statusText: LiveData<String> = _statusText
 
     private val _geofenceStatusText = MutableLiveData<String>("GPS: –")
@@ -73,6 +73,35 @@ class MainViewModel : ViewModel() {
 
     private var bluetoothAdapter: BluetoothAdapter? = null
 
+    private val _bleDetectedLockIndex = MutableLiveData<Int?>()
+    val bleDetectedLockIndex: LiveData<Int?> = _bleDetectedLockIndex
+
+    val bleScanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult?) {
+            result?.let { scanResult ->
+                val cleanMac = scanResult.device.address.replace(":", "").uppercase()
+                val rssi = scanResult.rssi
+                val targetLockId = deviceMap[cleanMac] ?: return
+
+                if (rssi > PROXIMITY_THRESHOLD) {
+                    val now = System.currentTimeMillis()
+                    if (now - lastUnlockTime > UNLOCK_COOLDOWN_MS) {
+                        val index = lockList.indexOf(targetLockId)
+                        currentLockId = targetLockId
+
+                        _statusText.postValue("BLE: Opening $targetLockId...")
+                        sendCommand(targetLockId, "OPEN")
+                        logRepository.logAccess(targetLockId, "AUTO_BLE", rssi)
+                        lastUnlockTime = now
+                        _toastMessage.postValue("AUTO BLE OPEN: $targetLockId")
+
+                        _bleDetectedLockIndex.postValue(index)
+                    }
+                }
+            }
+        }
+    }
+
     fun init(context: Context, btAdapter: BluetoothAdapter?) {
         bluetoothAdapter = btAdapter
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
@@ -85,12 +114,12 @@ class MainViewModel : ViewModel() {
             password = password,
             onSuccess = {
                 _isLoggedIn.value = true
-                _statusText.value = "Bejelentkezve"
+                _statusText.value = "Logged in"
                 listenToCurrentLockStatus()
             },
             onFailure = { error ->
-                _statusText.value = "Login hiba!"
-                _toastMessage.value = "Login hiba: $error"
+                _statusText.value = "Login error!"
+                _toastMessage.value = "Login error: $error"
             }
         )
     }
@@ -130,11 +159,10 @@ class MainViewModel : ViewModel() {
                 lastLoggedStatus = lockModel.status
             },
             onError = { errorMsg ->
-                _statusText.value = "Hiba: $errorMsg"
+                _statusText.value = "Error: $errorMsg"
             }
         )
     }
-
 
     fun fetchLockLocation() {
         lockRepository.fetchLockLocation(
@@ -142,7 +170,7 @@ class MainViewModel : ViewModel() {
             onSuccess = { location ->
                 lockLocation = location
                 _geofenceStatusText.value =
-                    "GPS: koordináták OK (${location.latitude}, ${location.longitude})"
+                    "GPS: coordinates OK (${location.latitude}, ${location.longitude})"
             },
             onFailure = { msg ->
                 _geofenceStatusText.value = "⚠ $msg"
@@ -157,7 +185,7 @@ class MainViewModel : ViewModel() {
                 val target = lockLocation
 
                 if (target == null) {
-                    _geofenceStatusText.postValue("GPS: zár koordinátái hiányoznak Firebase-ből")
+                    _geofenceStatusText.postValue("GPS: missing lock coordinates from Firebase")
                     return
                 }
 
@@ -165,18 +193,18 @@ class MainViewModel : ViewModel() {
                 val inside = distanceMeters <= geofenceRadiusMeters
 
                 _geofenceStatusText.postValue(
-                    "GPS: ${distanceMeters.toInt()} m a zártól " +
-                            "(limit: ${geofenceRadiusMeters.toInt()} m) ${if (inside) "✓ BENT" else "KINT"}"
+                    "GPS: ${distanceMeters.toInt()} m from lock " +
+                            "(limit: ${geofenceRadiusMeters.toInt()} m) ${if (inside) "✓ INSIDE" else "OUTSIDE"}"
                 )
 
                 if (inside && !wasInsideGeofence) {
                     val now = System.currentTimeMillis()
                     if (now - lastGeofenceUnlock > UNLOCK_COOLDOWN_MS) {
-                        Log.d(TAG, "Geofence zónába lépés → $currentLockId nyitása")
+                        Log.d(TAG, "Entered geofence zone → opening $currentLockId")
                         sendCommand(currentLockId, "OPEN")
                         logRepository.logAccess(currentLockId, "AUTO_GEOFENCE")
                         lastGeofenceUnlock = now
-                        _statusText.postValue("GEOFENCE: $currentLockId nyitva!")
+                        _statusText.postValue("GEOFENCE: $currentLockId opened!")
                         _toastMessage.postValue("GEOFENCE AUTO OPEN: $currentLockId")
                     }
                 }
@@ -207,35 +235,6 @@ class MainViewModel : ViewModel() {
         wasInsideGeofence = false
     }
 
-    val bleScanCallback = object : ScanCallback() {
-        override fun onScanResult(callbackType: Int, result: ScanResult?) {
-            result?.let { scanResult ->
-                val cleanMac = scanResult.device.address.replace(":", "").uppercase()
-                val rssi = scanResult.rssi
-                val targetLockId = deviceMap[cleanMac] ?: return
-
-                if (rssi > PROXIMITY_THRESHOLD) {
-                    val now = System.currentTimeMillis()
-                    if (now - lastUnlockTime > UNLOCK_COOLDOWN_MS) {
-                        val index = lockList.indexOf(targetLockId)
-                        currentLockId = targetLockId
-
-                        _statusText.postValue("BLE: $targetLockId nyitása...")
-                        sendCommand(targetLockId, "OPEN")
-                        logRepository.logAccess(targetLockId, "AUTO_BLE", rssi)
-                        lastUnlockTime = now
-                        _toastMessage.postValue("AUTO BLE OPEN: $targetLockId")
-
-                        _bleDetectedLockIndex.postValue(index)
-                    }
-                }
-            }
-        }
-    }
-
-    private val _bleDetectedLockIndex = MutableLiveData<Int?>()
-    val bleDetectedLockIndex: LiveData<Int?> = _bleDetectedLockIndex
-
     @SuppressLint("MissingPermission")
     fun startBLEScan() {
         if (bluetoothAdapter == null || isScanning) return
@@ -244,7 +243,7 @@ class MainViewModel : ViewModel() {
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
             bluetoothAdapter!!.bluetoothLeScanner.startScan(null, settings, bleScanCallback)
             isScanning = true
-            _statusText.value = "BLE: keresés..."
+            _statusText.value = "BLE: scanning..."
         } catch (e: SecurityException) {
             Log.e(TAG, "BLE scan security exception: ${e.message}")
         }
@@ -256,7 +255,7 @@ class MainViewModel : ViewModel() {
         try {
             bluetoothAdapter!!.bluetoothLeScanner.stopScan(bleScanCallback)
             isScanning = false
-            _statusText.value = "BLE: leállítva"
+            _statusText.value = "BLE: stopped"
         } catch (e: SecurityException) {
             Log.e(TAG, "BLE stop security exception: ${e.message}")
         }
@@ -269,12 +268,12 @@ class MainViewModel : ViewModel() {
     fun onBleIndexHandled() {
         _bleDetectedLockIndex.value = null
     }
-    
+
     override fun onCleared() {
         super.onCleared()
         lockRepository.stopListening()
         stopLocationUpdates()
         stopBLEScan()
-        Log.d(TAG, "ViewModel cleared, figyelések leállítva")
+        Log.d(TAG, "ViewModel cleared, listeners stopped")
     }
 }

@@ -6,12 +6,12 @@ object LockMapper {
 
     fun mapStatusToDisplayText(status: String): String {
         return when (status.uppercase()) {
-            "LOCKED"   -> "🔒 Zárva"
-            "UNLOCKED" -> "🔓 Nyitva"
-            "OPENING"  -> "⏳ Nyitás folyamatban..."
-            "CLOSING"  -> "⏳ Zárás folyamatban..."
-            "ERROR"    -> "⚠️ Hiba"
-            else       -> "❓ Ismeretlen állapot: $status"
+            "LOCKED"   -> "🔒 Locked"
+            "UNLOCKED" -> "🔓 Unlocked"
+            "OPENING"  -> "⏳ Opening..."
+            "CLOSING"  -> "⏳ Closing..."
+            "ERROR"    -> "⚠️ Error"
+            else       -> "❓ Unknown status: $status"
         }
     }
 
@@ -23,9 +23,9 @@ object LockMapper {
 
     fun mapLockIdToName(lockId: String): String {
         return when (lockId) {
-            "LOCK_0CDC7E614160" -> "Zár #1"
-            "LOCK_0CDC7E5D076C" -> "Zár #2"
-            "LOCK_B8F862E0BCBC" -> "Zár #3"
+            "LOCK_0CDC7E614160" -> "Lock #1"
+            "LOCK_0CDC7E5D076C" -> "Lock #2"
+            "LOCK_B8F862E0BCBC" -> "Lock #3"
             else                -> lockId
         }
     }

@@ -16,9 +16,7 @@ object FirebaseClient {
         FirebaseDatabase.getInstance(DATABASE_URL)
     }
 
-
     fun getReference(path: String) = database.getReference(path)
-
 
     val currentUserEmail: String
         get() = auth.currentUser?.email ?: "Unknown"

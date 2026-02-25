@@ -43,10 +43,10 @@ class LogRepository {
             .push()
             .setValue(logData)
             .addOnSuccessListener {
-                Log.d(TAG, "Log elmentve: ${log.method} → ${log.lockId}")
+                Log.d(TAG, "Log saved: ${log.method} → ${log.lockId}")
             }
             .addOnFailureListener { e ->
-                Log.e(TAG, "Log mentési hiba: ${e.message}")
+                Log.e(TAG, "Log saving error: ${e.message}")
             }
     }
 }
