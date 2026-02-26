@@ -25,6 +25,28 @@ class AuthRepository {
             }
     }
 
+    fun register(
+        email: String,
+        password: String,
+        displayName: String,
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        FirebaseClient.auth
+            .createUserWithEmailAndPassword(email, password)
+            .addOnSuccessListener { result ->
+                val uid = result.user?.uid ?: return@addOnSuccessListener
+                // Mentjük a user profilját a Firebase "users" táblába
+                UserRepository().saveUserProfile(uid, email, displayName)
+                Log.d(TAG, "Register successful: $email")
+                onSuccess()
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Register error: ${e.message}")
+                onFailure(e.message ?: "Unknown error")
+            }
+    }
+
     fun logout() {
         FirebaseClient.auth.signOut()
         Log.d(TAG, "Logged out")

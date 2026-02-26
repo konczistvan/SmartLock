@@ -4,9 +4,12 @@ import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,12 +17,13 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.example.smartlock.R
+import com.example.smartlock.ui.addlock.AddLockActivity
+import com.example.smartlock.ui.login.LoginActivity
+import com.example.smartlock.ui.manageaccess.ManageAccessActivity
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 
 class MainActivity : AppCompatActivity() {
-
-    private val TEST_EMAIL = "admin@smartlock.com"
-    private val TEST_PASS  = "123456"
 
     private val viewModel: MainViewModel by viewModels()
 
@@ -32,6 +36,20 @@ class MainActivity : AppCompatActivity() {
     private lateinit var seekBarRadius:    SeekBar
     private lateinit var tvRadius:         TextView
     private lateinit var tvGeofenceStatus: TextView
+    private lateinit var fabAddLock:       FloatingActionButton
+    private lateinit var btnManageAccess:  android.widget.Button
+    private lateinit var tvUserEmail: TextView
+    private lateinit var btnLogout: android.widget.Button
+
+    // AddLock activity eredményének figyelése
+    private val addLockLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            // Új zár lett hozzáadva – újratöltjük a listát
+            viewModel.reloadLocks()
+        }
+    }
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -57,7 +75,9 @@ class MainActivity : AppCompatActivity() {
         observeViewModel()
         setupListeners()
 
-        viewModel.login(TEST_EMAIL, TEST_PASS)
+        // Nem hardkódolt login – a Firebase Auth session már aktív
+        // (a LoginActivity gondoskodott róla)
+        viewModel.loginAndLoadLocks()
     }
 
     private fun bindViews() {
@@ -70,6 +90,13 @@ class MainActivity : AppCompatActivity() {
         seekBarRadius    = findViewById(R.id.seekBarRadius)
         tvRadius         = findViewById(R.id.tvRadius)
         tvGeofenceStatus = findViewById(R.id.tvGeofenceStatus)
+        fabAddLock       = findViewById(R.id.fabAddLock)
+        btnManageAccess  = findViewById(R.id.btnManageAccess)
+        tvUserEmail      = findViewById(R.id.tvUserEmail)
+        btnLogout        = findViewById(R.id.btnLogout)
+
+        val currentUser = com.example.smartlock.api.FirebaseClient.auth.currentUser
+        tvUserEmail.text = currentUser?.email ?: ""
 
         enableButtons(false)
     }
@@ -81,19 +108,31 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupSpinner() {
+        spinnerLocks.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                viewModel.selectLock(position)
+                // Manage gomb láthatósága: csak ownernek
+                updateManageButton()
+            }
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+    }
+
+    private fun updateSpinnerData() {
         val adapter = ArrayAdapter(
             this,
             android.R.layout.simple_spinner_dropdown_item,
             viewModel.lockDisplayNames
         )
         spinnerLocks.adapter = adapter
+    }
 
-        spinnerLocks.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                viewModel.selectLock(position)
-            }
-            override fun onNothingSelected(parent: AdapterView<*>) {}
-        }
+    private fun updateManageButton() {
+        // Kis késleltetés, hogy a selectLock lekérje a szerepkört
+        btnManageAccess.postDelayed({
+            btnManageAccess.visibility =
+                if (viewModel.isOwnerOfCurrentLock()) View.VISIBLE else View.GONE
+        }, 500)
     }
 
     private fun setupGeofenceUI() {
@@ -108,14 +147,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun observeViewModel() {
-
-        viewModel.statusText.observe(this) { text ->
-            tvStatus.text = text
-        }
-
-        viewModel.geofenceStatusText.observe(this) { text ->
-            tvGeofenceStatus.text = text
-        }
+        viewModel.statusText.observe(this) { tvStatus.text = it }
+        viewModel.geofenceStatusText.observe(this) { tvGeofenceStatus.text = it }
 
         viewModel.toastMessage.observe(this) { message ->
             if (message != null) {
@@ -126,6 +159,14 @@ class MainActivity : AppCompatActivity() {
 
         viewModel.isLoggedIn.observe(this) { loggedIn ->
             enableButtons(loggedIn)
+        }
+
+        // Zárak betöltődtek → frissítjük a spinnert
+        viewModel.locksLoaded.observe(this) { loaded ->
+            if (loaded) {
+                updateSpinnerData()
+                updateManageButton()
+            }
         }
 
         viewModel.bleDetectedLockIndex.observe(this) { index ->
@@ -139,6 +180,21 @@ class MainActivity : AppCompatActivity() {
     private fun setupListeners() {
         btnOpen.setOnClickListener  { viewModel.openLock() }
         btnClose.setOnClickListener { viewModel.closeLock() }
+
+        // Zár hozzáadása gomb
+        fabAddLock.setOnClickListener {
+            addLockLauncher.launch(Intent(this, AddLockActivity::class.java))
+        }
+
+        // Hozzáférés kezelése gomb (csak ownereknek látható)
+        btnManageAccess.setOnClickListener {
+            val lockName = viewModel.myLocks.find { it.id == viewModel.currentLockId }?.name ?: ""
+            val intent = Intent(this, ManageAccessActivity::class.java).apply {
+                putExtra("lockId", viewModel.currentLockId)
+                putExtra("lockName", lockName)
+            }
+            startActivity(intent)
+        }
 
         switchAutoUnlock.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
@@ -168,9 +224,16 @@ class MainActivity : AppCompatActivity() {
                 tvGeofenceStatus.text = "GPS: –"
             }
         }
+
+        btnLogout.setOnClickListener {
+            viewModel.authRepository.logout()
+            startActivity(Intent(this, LoginActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            })
+        }
     }
 
-    private fun hasLocationPermission(): Boolean =
+    private fun hasLocationPermission() =
         ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
                 PackageManager.PERMISSION_GRANTED
 
@@ -184,29 +247,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestLocationPermissions() {
-        val perms = mutableListOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            perms.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-        }
+        val perms = mutableListOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) perms.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
         requestPermissionLauncher.launch(perms.toTypedArray())
     }
 
     private fun requestBluetoothPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             requestPermissionLauncher.launch(arrayOf(
-                Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ))
+                Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.ACCESS_FINE_LOCATION))
         } else {
             requestPermissionLauncher.launch(arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.BLUETOOTH,
-                Manifest.permission.BLUETOOTH_ADMIN
-            ))
+                Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BLUETOOTH, Manifest.permission.BLUETOOTH_ADMIN))
         }
     }
 

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FAFAFA">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/tvHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="13sp"
+            android:textColor="#777777"
+            android:background="#EEEEEE"
+            android:padding="12dp"
+            android:layout_marginBottom="24dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Lock name (e.g. Front Door)"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/etLockName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Front Door"
+            android:layout_marginBottom="20dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Lock ID (from ESP32 code)"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/etLockId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="LOCK_B8F862E0BCBC"
+            android:inputType="textCapCharacters"
+            android:layout_marginBottom="20dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BLE MAC address (optional, for auto-unlock)"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/etMacAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="B8F862E0BCBD"
+            android:inputType="textCapCharacters"
+            android:layout_marginBottom="32dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Latitude (optional, e.g. 46.5348)"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/etLatitude"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="46.534800"
+            android:inputType="numberDecimal|numberSigned"
+            android:layout_marginBottom="20dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Longitude (optional, e.g. 24.5657)"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/etLongitude"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="24.565700"
+            android:inputType="numberDecimal|numberSigned"
+            android:layout_marginBottom="32dp"/>
+
+        <Button
+            android:id="@+id/btnAddLock"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="ADD LOCK"
+            android:textStyle="bold"
+            android:backgroundTint="#4CAF50"/>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"/>
+
+    </LinearLayout>
+</ScrollView>
