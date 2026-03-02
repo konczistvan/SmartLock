@@ -17,7 +17,6 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Ha már be van jelentkezve, egyből a főoldalra
         if (authRepository.isLoggedIn()) {
             goToMain()
             return
@@ -25,14 +24,14 @@ class LoginActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_login)
 
-        val etEmail       = findViewById<EditText>(R.id.etEmail)
-        val etPassword    = findViewById<EditText>(R.id.etPassword)
-        val btnLogin      = findViewById<Button>(R.id.btnLogin)
-        val btnRegister   = findViewById<TextView>(R.id.btnGoToRegister)
-        val progressBar   = findViewById<ProgressBar>(R.id.progressBar)
+        val etEmail = findViewById<EditText>(R.id.etEmail)
+        val etPassword = findViewById<EditText>(R.id.etPassword)
+        val btnLogin = findViewById<Button>(R.id.btnLogin)
+        val btnRegister = findViewById<TextView>(R.id.btnGoToRegister)
+        val progressBar = findViewById<ProgressBar>(R.id.progressBar)
 
         btnLogin.setOnClickListener {
-            val email    = etEmail.text.toString().trim()
+            val email = etEmail.text.toString().trim()
             val password = etPassword.text.toString().trim()
 
             if (email.isEmpty() || password.isEmpty()) {
@@ -41,10 +40,10 @@ class LoginActivity : AppCompatActivity() {
             }
 
             progressBar.visibility = View.VISIBLE
-            btnLogin.isEnabled     = false
+            btnLogin.isEnabled = false
 
             authRepository.login(
-                email    = email,
+                email = email,
                 password = password,
                 onSuccess = {
                     progressBar.visibility = View.GONE
@@ -52,7 +51,7 @@ class LoginActivity : AppCompatActivity() {
                 },
                 onFailure = { error ->
                     progressBar.visibility = View.GONE
-                    btnLogin.isEnabled     = true
+                    btnLogin.isEnabled = true
                     Toast.makeText(this, "Login failed: $error", Toast.LENGTH_LONG).show()
                 }
             )

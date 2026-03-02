@@ -1,5 +1,6 @@
 package com.example.smartlock.ui.register
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -13,20 +14,21 @@ class RegisterActivity : AppCompatActivity() {
 
     private val authRepository = AuthRepository()
 
+    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
 
-        val etName      = findViewById<EditText>(R.id.etName)
-        val etEmail     = findViewById<EditText>(R.id.etEmail)
-        val etPassword  = findViewById<EditText>(R.id.etPassword)
+        val etName = findViewById<EditText>(R.id.etName)
+        val etEmail = findViewById<EditText>(R.id.etEmail)
+        val etPassword = findViewById<EditText>(R.id.etPassword)
         val btnRegister = findViewById<Button>(R.id.btnRegister)
         val progressBar = findViewById<ProgressBar>(R.id.progressBar)
-        val btnBack     = findViewById<TextView>(R.id.btnBackToLogin)
+        val btnBack = findViewById<TextView>(R.id.btnBackToLogin)
 
         btnRegister.setOnClickListener {
-            val name     = etName.text.toString().trim()
-            val email    = etEmail.text.toString().trim()
+            val name = etName.text.toString().trim()
+            val email = etEmail.text.toString().trim()
             val password = etPassword.text.toString().trim()
 
             if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
@@ -34,16 +36,17 @@ class RegisterActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             if (password.length < 6) {
-                Toast.makeText(this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Password must be at least 6 characters", Toast.LENGTH_SHORT)
+                    .show()
                 return@setOnClickListener
             }
 
             progressBar.visibility = View.VISIBLE
-            btnRegister.isEnabled  = false
+            btnRegister.isEnabled = false
 
             authRepository.register(
-                email       = email,
-                password    = password,
+                email = email,
+                password = password,
                 displayName = name,
                 onSuccess = {
                     progressBar.visibility = View.GONE
@@ -53,7 +56,7 @@ class RegisterActivity : AppCompatActivity() {
                 },
                 onFailure = { error ->
                     progressBar.visibility = View.GONE
-                    btnRegister.isEnabled  = true
+                    btnRegister.isEnabled = true
                     Toast.makeText(this, "Registration failed: $error", Toast.LENGTH_LONG).show()
                 }
             )

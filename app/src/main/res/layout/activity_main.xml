@@ -4,205 +4,24 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FAFAFA">
+    android:background="@color/background">
 
-    <!-- FEJLÉC -->
-    <LinearLayout
-        android:id="@+id/header"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:background="#1976D2"
-        android:padding="12dp"
-        android:gravity="center_vertical">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="🔒 SmartLock"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"/>
-
-            <TextView
-                android:id="@+id/tvUserEmail"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="12sp"
-                android:textColor="#BBDEFB"/>
-
-        </LinearLayout>
-
-        <Button
-            android:id="@+id/btnLogout"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="Logout"
-            android:textSize="12sp"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#1565C0"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"/>
-
-    </LinearLayout>
-
-    <!-- FŐ TARTALOM -->
-    <ScrollView
+    <FrameLayout
+        android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="64dp">
+        android:paddingBottom="66dp"/>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:padding="24dp"
-            android:paddingBottom="80dp">
-
-            <TextView
-                android:id="@+id/tvStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Loading..."
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:textColor="#333333"
-                android:gravity="center"
-                android:layout_marginBottom="24dp"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Choose your lock:"
-                android:layout_marginBottom="5dp"/>
-
-            <Spinner
-                android:id="@+id/spinnerLocks"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:background="#EEEEEE"
-                android:layout_marginBottom="8dp"/>
-
-            <Button
-                android:id="@+id/btnManageAccess"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:text="⚙ Manage Access"
-                android:textSize="13sp"
-                android:backgroundTint="#607D8B"
-                android:visibility="gone"
-                android:layout_marginBottom="20dp"/>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="GEOFENCE"
-                android:textSize="14sp"
-                android:textColor="#888888"
-                android:textStyle="bold"
-                android:layout_marginBottom="4dp"/>
-
-            <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/switchGeofence"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="AUTO OPEN (Geofence GPS)"
-                android:textSize="16sp"
-                android:padding="6dp"
-                android:checked="false"
-                android:layout_marginBottom="8dp"/>
-
-            <TextView
-                android:id="@+id/tvRadius"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Radius: 50 m"
-                android:textSize="15sp"
-                android:textColor="#555555"
-                android:layout_marginBottom="4dp"/>
-
-            <SeekBar
-                android:id="@+id/seekBarRadius"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:max="490"
-                android:progress="40"
-                android:layout_marginBottom="8dp"/>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="(3 m – 500 m)"
-                android:textSize="12sp"
-                android:textColor="#AAAAAA"
-                android:layout_marginBottom="8dp"/>
-
-            <TextView
-                android:id="@+id/tvGeofenceStatus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="GPS: –"
-                android:textSize="13sp"
-                android:textColor="#777777"
-                android:layout_marginBottom="20dp"/>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="BLE PROXIMITY"
-                android:textSize="14sp"
-                android:textColor="#888888"
-                android:textStyle="bold"
-                android:layout_marginBottom="4dp"/>
-
-            <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/switchAutoUnlock"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="AUTO OPEN (BLE Proximity)"
-                android:textSize="16sp"
-                android:padding="6dp"
-                android:checked="false"
-                android:layout_marginBottom="20dp"/>
-
-            <Button
-                android:id="@+id/btnOpen"
-                android:layout_width="match_parent"
-                android:layout_height="70dp"
-                android:text="OPEN"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:backgroundTint="#4CAF50"
-                android:layout_marginBottom="16dp"/>
-
-            <Button
-                android:id="@+id/btnClose"
-                android:layout_width="match_parent"
-                android:layout_height="70dp"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:backgroundTint="#F44336"
-                android:text="CLOSE"/>
-
-        </LinearLayout>
-    </ScrollView>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAddLock"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="#1976D2"
-        app:tint="@android:color/white"/>
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="66dp"
+        android:layout_gravity="bottom"
+        android:background="@color/surface"
+        android:elevation="12dp"
+        app:menu="@menu/bottom_nav_menu"
+        app:itemIconTint="@drawable/nav_color"
+        app:itemTextColor="@drawable/nav_color"
+        app:labelVisibilityMode="labeled"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

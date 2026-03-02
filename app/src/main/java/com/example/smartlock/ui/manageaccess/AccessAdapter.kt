@@ -30,21 +30,26 @@ class AccessAdapter(
     override fun getItemCount() = items.size
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val tvName:   TextView = itemView.findViewById(R.id.tvName)
-        private val tvEmail:  TextView = itemView.findViewById(R.id.tvEmail)
-        private val tvRole:   TextView = itemView.findViewById(R.id.tvRole)
+        private val tvDisplayName: TextView = itemView.findViewById(R.id.tvDisplayName)
+        private val tvEmail: TextView = itemView.findViewById(R.id.tvEmail)
+        private val tvRole: TextView = itemView.findViewById(R.id.tvRole)
         private val tvExpiry: TextView = itemView.findViewById(R.id.tvExpiry)
-        private val btnRevoke: Button  = itemView.findViewById(R.id.btnRevoke)
+        private val btnRevoke: Button = itemView.findViewById(R.id.btnRevoke)
 
         fun bind(p: PermissionModel) {
-            tvName.text  = p.displayName.ifEmpty { "Unknown" }
+            tvDisplayName.text = p.displayName.ifEmpty { "Unknown" }
             tvEmail.text = p.email
-            tvRole.text  = p.role.uppercase()
+            tvRole.text = p.role.uppercase()
 
             tvExpiry.text = if (p.expiresAt == null) {
                 "Permanent"
             } else {
-                "Expires: ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(p.expiresAt))}"
+                "Expires: ${
+                    SimpleDateFormat(
+                        "yyyy-MM-dd HH:mm",
+                        Locale.getDefault()
+                    ).format(Date(p.expiresAt))
+                }"
             }
 
             if (p.role == "owner") {

@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- item_access.xml - user row in manage access list -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -11,16 +10,18 @@
     android:layout_marginBottom="10dp">
 
     <FrameLayout
-        android:layout_width="42dp"
-        android:layout_height="42dp"
-        android:background="@drawable/bg_circle_primary">
+        android:id="@+id/ivIconBg"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:background="@drawable/bg_circle_green">
 
         <ImageView
+            android:id="@+id/ivIcon"
             android:layout_width="22dp"
             android:layout_height="22dp"
             android:layout_gravity="center"
-            android:src="@android:drawable/ic_menu_my_calendar"
-            app:tint="@color/primary" />
+            android:src="@android:drawable/ic_lock_idle_lock"
+            app:tint="@color/green" />
     </FrameLayout>
 
     <LinearLayout
@@ -31,19 +32,19 @@
         android:layout_marginStart="12dp">
 
         <TextView
-            android:id="@+id/tvDisplayName"
+            android:id="@+id/tvAction"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="John Doe"
+            android:text="Door Unlocked"
             android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="@color/text_primary"/>
 
         <TextView
-            android:id="@+id/tvEmail"
+            android:id="@+id/tvMethod"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="john@email.com"
+            android:text="Manual unlock via app"
             android:textSize="12sp"
             android:textColor="@color/text_secondary"/>
 
@@ -51,43 +52,55 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="4dp">
+            android:gravity="center_vertical"
+            android:layout_marginTop="5dp">
+
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_tag_success"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:layout_marginEnd="6dp">
+                <TextView
+                    android:id="@+id/tvDevice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Admin"
+                    android:textSize="10sp"
+                    android:textColor="@color/green"
+                    android:textStyle="bold"/>
+            </FrameLayout>
 
             <FrameLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_tag_primary"
-                android:paddingStart="8dp" android:paddingEnd="8dp"
-                android:paddingTop="3dp" android:paddingBottom="3dp"
-                android:layout_marginEnd="6dp">
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp">
                 <TextView
-                    android:id="@+id/tvRole"
+                    android:id="@+id/tvLockId"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Owner"
+                    android:text="Lock #1"
                     android:textSize="10sp"
                     android:textColor="@color/primary"
                     android:textStyle="bold"/>
             </FrameLayout>
-
-            <TextView
-                android:id="@+id/tvExpiry"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Permanent"
-                android:textSize="10sp"
-                android:textColor="@color/text_secondary"/>
         </LinearLayout>
     </LinearLayout>
 
-    <Button
-        android:id="@+id/btnRevoke"
+    <TextView
+        android:id="@+id/tvTime"
         android:layout_width="wrap_content"
-        android:layout_height="34dp"
-        android:text="Revoke"
-        android:textColor="@color/red"
-        android:textSize="12sp"
-        android:backgroundTint="@color/red_bg"
-        style="@style/Widget.MaterialComponents.Button"/>
+        android:layout_height="wrap_content"
+        android:text="2h ago"
+        android:textSize="11sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginStart="8dp"/>
 
 </LinearLayout>

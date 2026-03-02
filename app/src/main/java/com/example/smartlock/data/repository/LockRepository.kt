@@ -100,29 +100,37 @@ class LockRepository {
             }
     }
 
-    // Több zár adatainak egyszerre lekérése
     fun fetchMyLocks(lockIds: List<String>, onResult: (List<LockModel>) -> Unit) {
         if (lockIds.isEmpty()) {
             onResult(emptyList())
             return
         }
 
-        val locks   = mutableListOf<LockModel>()
+        val locks = mutableListOf<LockModel>()
         var fetched = 0
 
         for (lockId in lockIds) {
             FirebaseClient.getReference("locks/$lockId")
                 .get()
                 .addOnSuccessListener { snapshot ->
-                    val name       = snapshot.child("name").getValue(String::class.java) ?: lockId
-                    val status     = snapshot.child("status").getValue(String::class.java) ?: "UNKNOWN"
+                    val name = snapshot.child("name").getValue(String::class.java) ?: lockId
+                    val status = snapshot.child("status").getValue(String::class.java) ?: "UNKNOWN"
                     val macAddress = snapshot.child("macAddress").getValue(String::class.java) ?: ""
-                    val lat        = snapshot.child("location/lat").getValue(Double::class.java)
-                    val lng        = snapshot.child("location/lng").getValue(Double::class.java)
-                    val addedBy    = snapshot.child("addedBy").getValue(String::class.java) ?: ""
+                    val lat = snapshot.child("location/lat").getValue(Double::class.java)
+                    val lng = snapshot.child("location/lng").getValue(Double::class.java)
+                    val addedBy = snapshot.child("addedBy").getValue(String::class.java) ?: ""
 
-                    locks.add(LockModel(id = lockId, name = name, status = status,
-                        macAddress = macAddress, latitude = lat, longitude = lng, addedBy = addedBy))
+                    locks.add(
+                        LockModel(
+                            id = lockId,
+                            name = name,
+                            status = status,
+                            macAddress = macAddress,
+                            latitude = lat,
+                            longitude = lng,
+                            addedBy = addedBy
+                        )
+                    )
                     fetched++
                     if (fetched == lockIds.size) onResult(locks)
                 }
@@ -138,23 +146,24 @@ class LockRepository {
         lockName: String,
         macAddress: String,
         addedByUid: String,
-        latitude: Double = 0.0,
-        longitude: Double = 0.0,
+        latitude: Double,
+        longitude: Double,
         onSuccess: () -> Unit,
         onFailure: (String) -> Unit
     ) {
-        val lockData = hashMapOf(
-            "name"       to lockName,
+        val lockData = mapOf(
+            "name" to lockName,
             "macAddress" to macAddress,
-            "command"    to "NONE",
-            "status"     to "LOCKED",
-            "addedBy"    to addedByUid,
-            "location"   to hashMapOf("lat" to latitude, "lng" to longitude)
+            "status" to "LOCKED",
+            "command" to "NONE",
+            "owner" to addedByUid,
+            "location" to mapOf("lat" to latitude, "lng" to longitude)
         )
+
         FirebaseClient.getReference("locks/$lockId")
             .setValue(lockData)
             .addOnSuccessListener { onSuccess() }
-            .addOnFailureListener { onFailure(it.message ?: "Error") }
+            .addOnFailureListener { onFailure(it.message ?: "Unknown error") }
     }
 }
 
