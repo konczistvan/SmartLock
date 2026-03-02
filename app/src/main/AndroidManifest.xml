@@ -20,16 +20,29 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.smartlock"
+        android:theme="@style/Theme.SmartLock"
         tools:targetApi="31">
+
+        <!-- Belépési pont: LoginActivity -->
         <activity
-            android:name=".ui.main.MainActivity"
+            android:name=".ui.splash.SplashActivity"
+            android:theme="@style/Theme.SmartLock.Splash"
             android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <activity android:name=".ui.onboarding.OnboardingActivity"
+            android:theme="@style/Theme.SmartLock.Splash"/>
+
+        <activity android:name=".ui.login.LoginActivity"/>
+        <activity android:name=".ui.register.RegisterActivity"/>
+        <activity android:name=".ui.main.MainActivity"/>
+        <activity android:name=".ui.addlock.AddLockActivity"/>
+        <activity android:name=".ui.manageaccess.ManageAccessActivity"/>
+
     </application>
 
 </manifest>

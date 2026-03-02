@@ -99,4 +99,71 @@ class LockRepository {
                 onFailure(e.message ?: "Unknown error")
             }
     }
+
+    fun fetchMyLocks(lockIds: List<String>, onResult: (List<LockModel>) -> Unit) {
+        if (lockIds.isEmpty()) {
+            onResult(emptyList())
+            return
+        }
+
+        val locks = mutableListOf<LockModel>()
+        var fetched = 0
+
+        for (lockId in lockIds) {
+            FirebaseClient.getReference("locks/$lockId")
+                .get()
+                .addOnSuccessListener { snapshot ->
+                    val name = snapshot.child("name").getValue(String::class.java) ?: lockId
+                    val status = snapshot.child("status").getValue(String::class.java) ?: "UNKNOWN"
+                    val macAddress = snapshot.child("macAddress").getValue(String::class.java) ?: ""
+                    val lat = snapshot.child("location/lat").getValue(Double::class.java)
+                    val lng = snapshot.child("location/lng").getValue(Double::class.java)
+                    val addedBy = snapshot.child("addedBy").getValue(String::class.java) ?: ""
+
+                    locks.add(
+                        LockModel(
+                            id = lockId,
+                            name = name,
+                            status = status,
+                            macAddress = macAddress,
+                            latitude = lat,
+                            longitude = lng,
+                            addedBy = addedBy
+                        )
+                    )
+                    fetched++
+                    if (fetched == lockIds.size) onResult(locks)
+                }
+                .addOnFailureListener {
+                    fetched++
+                    if (fetched == lockIds.size) onResult(locks)
+                }
+        }
+    }
+
+    fun addLock(
+        lockId: String,
+        lockName: String,
+        macAddress: String,
+        addedByUid: String,
+        latitude: Double,
+        longitude: Double,
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        val lockData = mapOf(
+            "name" to lockName,
+            "macAddress" to macAddress,
+            "status" to "LOCKED",
+            "command" to "NONE",
+            "owner" to addedByUid,
+            "location" to mapOf("lat" to latitude, "lng" to longitude)
+        )
+
+        FirebaseClient.getReference("locks/$lockId")
+            .setValue(lockData)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { onFailure(it.message ?: "Unknown error") }
+    }
 }
+

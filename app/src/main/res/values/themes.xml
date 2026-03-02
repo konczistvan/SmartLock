@@ -1,9 +1,61 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.smartlock" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.SmartLock" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_dark</item>
+        <item name="colorOnPrimary">@color/text_on_primary</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="android:windowBackground">@color/background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
-    <style name="Theme.smartlock" parent="Base.Theme.smartlock" />
+    <!-- Splash / onboarding keeps a dark status bar -->
+    <style name="Theme.SmartLock.Splash" parent="Theme.SmartLock">
+        <item name="android:statusBarColor">@color/primary_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+    <style name="Label" parent="android:Widget.TextView" />
+    <!-- Reusable text appearances -->
+    <style name="Label.Section">
+        <item name="android:textSize">11sp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0.10</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="TextAppearance.SectionLabel" parent="Label.Section"/>
+
+    <!-- Primary filled button -->
+    <style name="Btn.Primary" parent="Widget.MaterialComponents.Button">
+        <item name="android:backgroundTint">@color/primary</item>
+        <item name="android:textColor">@color/text_on_primary</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="cornerRadius">14dp</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:elevation">0dp</item>
+    </style>
+
+    <!-- Danger button -->
+    <style name="Btn.Danger" parent="Btn.Primary">
+        <item name="android:backgroundTint">@color/red</item>
+    </style>
+
+    <!-- Ghost button on gradient header -->
+    <style name="Btn.Ghost" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">#55FFFFFF</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="cornerRadius">14dp</item>
+    </style>
+
+    <!-- BottomNav -->
+    <style name="BottomNavText">
+        <item name="android:textSize">11sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
 </resources>

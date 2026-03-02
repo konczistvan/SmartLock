@@ -1,218 +1,64 @@
 package com.example.smartlock.ui.main
 
-import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
-import android.view.View
-import android.widget.*
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
+import androidx.fragment.app.Fragment
 import com.example.smartlock.R
-import com.google.android.material.switchmaterial.SwitchMaterial
+import com.example.smartlock.ui.devices.DevicesFragment
+import com.example.smartlock.ui.home.HomeFragment
+import com.example.smartlock.ui.logs.LogsFragment
+import com.example.smartlock.ui.settings.SettingsFragment
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
 
-    private val TEST_EMAIL = "admin@smartlock.com"
-    private val TEST_PASS  = "123456"
-
     private val viewModel: MainViewModel by viewModels()
-
-    private lateinit var tvStatus:         TextView
-    private lateinit var btnOpen:          android.widget.Button
-    private lateinit var btnClose:         android.widget.Button
-    private lateinit var spinnerLocks:     Spinner
-    private lateinit var switchAutoUnlock: SwitchMaterial
-    private lateinit var switchGeofence:   SwitchMaterial
-    private lateinit var seekBarRadius:    SeekBar
-    private lateinit var tvRadius:         TextView
-    private lateinit var tvGeofenceStatus: TextView
-
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val allGranted = permissions.entries.all { it.value }
-        if (allGranted) {
-            Toast.makeText(this, "Permissions granted", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, "Permissions required!", Toast.LENGTH_LONG).show()
-            switchAutoUnlock.isChecked = false
-            switchGeofence.isChecked = false
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        bindViews()
-        initBluetooth()
-        setupSpinner()
-        setupGeofenceUI()
-        observeViewModel()
-        setupListeners()
-
-        viewModel.login(TEST_EMAIL, TEST_PASS)
-    }
-
-    private fun bindViews() {
-        tvStatus         = findViewById(R.id.tvStatus)
-        btnOpen          = findViewById(R.id.btnOpen)
-        btnClose         = findViewById(R.id.btnClose)
-        spinnerLocks     = findViewById(R.id.spinnerLocks)
-        switchAutoUnlock = findViewById(R.id.switchAutoUnlock)
-        switchGeofence   = findViewById(R.id.switchGeofence)
-        seekBarRadius    = findViewById(R.id.seekBarRadius)
-        tvRadius         = findViewById(R.id.tvRadius)
-        tvGeofenceStatus = findViewById(R.id.tvGeofenceStatus)
-
-        enableButtons(false)
-    }
-
-    private fun initBluetooth() {
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         val btAdapter: BluetoothAdapter? = bluetoothManager.adapter
         viewModel.init(applicationContext, btAdapter)
-    }
+        viewModel.loginAndLoadLocks()
 
-    private fun setupSpinner() {
-        val adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_dropdown_item,
-            viewModel.lockDisplayNames
-        )
-        spinnerLocks.adapter = adapter
-
-        spinnerLocks.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                viewModel.selectLock(position)
-            }
-            override fun onNothingSelected(parent: AdapterView<*>) {}
-        }
-    }
-
-    private fun setupGeofenceUI() {
-        seekBarRadius.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
-                viewModel.geofenceRadiusMeters = (progress + 3).toFloat()
-                tvRadius.text = "Radius: ${viewModel.geofenceRadiusMeters.toInt()} m"
-            }
-            override fun onStartTrackingTouch(sb: SeekBar) {}
-            override fun onStopTrackingTouch(sb: SeekBar) {}
-        })
-    }
-
-    private fun observeViewModel() {
-
-        viewModel.statusText.observe(this) { text ->
-            tvStatus.text = text
-        }
-
-        viewModel.geofenceStatusText.observe(this) { text ->
-            tvGeofenceStatus.text = text
-        }
-
-        viewModel.toastMessage.observe(this) { message ->
-            if (message != null) {
-                Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-                viewModel.onToastShown()
-            }
-        }
-
-        viewModel.isLoggedIn.observe(this) { loggedIn ->
-            enableButtons(loggedIn)
-        }
-
-        viewModel.bleDetectedLockIndex.observe(this) { index ->
-            if (index != null) {
-                spinnerLocks.setSelection(index)
-                viewModel.onBleIndexHandled()
-            }
-        }
-    }
-
-    private fun setupListeners() {
-        btnOpen.setOnClickListener  { viewModel.openLock() }
-        btnClose.setOnClickListener { viewModel.closeLock() }
-
-        switchAutoUnlock.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                if (hasBluetoothPermissions()) viewModel.startBLEScan()
-                else {
-                    requestBluetoothPermissions()
-                    switchAutoUnlock.isChecked = false
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_home -> {
+                    loadFragment(HomeFragment()); true
                 }
-            } else {
-                viewModel.stopBLEScan()
-            }
-        }
 
-        switchGeofence.setOnCheckedChangeListener { _, isChecked ->
-            viewModel.isGeofenceEnabled = isChecked
-            if (isChecked) {
-                if (hasLocationPermission()) {
-                    viewModel.fetchLockLocation()
-                    viewModel.startLocationUpdates(this)
-                    tvGeofenceStatus.text = "GPS: searching..."
-                } else {
-                    requestLocationPermissions()
-                    switchGeofence.isChecked = false
+                R.id.nav_devices -> {
+                    loadFragment(DevicesFragment()); true
                 }
-            } else {
-                viewModel.stopLocationUpdates()
-                tvGeofenceStatus.text = "GPS: –"
+
+                R.id.nav_logs -> {
+                    loadFragment(LogsFragment()); true
+                }
+
+                R.id.nav_settings -> {
+                    loadFragment(SettingsFragment()); true
+                }
+
+                else -> false
             }
         }
-    }
 
-    private fun hasLocationPermission(): Boolean =
-        ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
-                PackageManager.PERMISSION_GRANTED
-
-    private fun hasBluetoothPermissions(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)    == PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
-        } else {
-            ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (savedInstanceState == null) {
+            loadFragment(HomeFragment())
         }
     }
 
-    private fun requestLocationPermissions() {
-        val perms = mutableListOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            perms.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-        }
-        requestPermissionLauncher.launch(perms.toTypedArray())
-    }
-
-    private fun requestBluetoothPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            requestPermissionLauncher.launch(arrayOf(
-                Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ))
-        } else {
-            requestPermissionLauncher.launch(arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.BLUETOOTH,
-                Manifest.permission.BLUETOOTH_ADMIN
-            ))
-        }
-    }
-
-    private fun enableButtons(enable: Boolean) {
-        btnOpen.isEnabled  = enable
-        btnClose.isEnabled = enable
+    private fun loadFragment(fragment: Fragment) {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragmentContainer, fragment)
+            .commit()
     }
 
     override fun onDestroy() {

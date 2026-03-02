@@ -54,4 +54,9 @@ dependencies {
     implementation("com.google.firebase:firebase-database")
 
     implementation("com.google.android.gms:play-services-location:21.2.0")
+
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+
+    implementation ("androidx.fragment:fragment-ktx:1.6.2")
+    implementation ("androidx.activity:activity-ktx:1.8.2")
 }
