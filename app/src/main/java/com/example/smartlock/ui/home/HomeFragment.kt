@@ -153,6 +153,10 @@ class HomeFragment : Fragment() {
                     ActivityCompat.checkSelfPermission(
                         requireContext(),
                         Manifest.permission.BLUETOOTH_CONNECT
+                    ) == PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(
+                        requireContext(),
+                        Manifest.permission.BLUETOOTH_ADVERTISE
                     ) == PackageManager.PERMISSION_GRANTED
         } else {
             ActivityCompat.checkSelfPermission(
@@ -177,6 +181,7 @@ class HomeFragment : Fragment() {
                 arrayOf(
                     Manifest.permission.BLUETOOTH_SCAN,
                     Manifest.permission.BLUETOOTH_CONNECT,
+                    Manifest.permission.BLUETOOTH_ADVERTISE,  // NEW!
                     Manifest.permission.ACCESS_FINE_LOCATION
                 )
             )

@@ -3,9 +3,6 @@ package com.example.smartlock.ui.main
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanResult
-import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
@@ -21,6 +18,7 @@ import com.example.smartlock.data.repository.AuthRepository
 import com.example.smartlock.data.repository.LockRepository
 import com.example.smartlock.data.repository.LogRepository
 import com.example.smartlock.data.repository.PermissionRepository
+import com.example.smartlock.service.BleAdvertiserService
 import com.google.android.gms.location.*
 
 class MainViewModel : ViewModel() {
@@ -35,8 +33,6 @@ class MainViewModel : ViewModel() {
 
     var myLocks: List<LockModel> = emptyList()
         private set
-
-    private var deviceMap: Map<String, String> = emptyMap()
 
     val lockDisplayNames: List<String>
         get() = myLocks.map { it.name.ifEmpty { it.id } }
@@ -80,10 +76,7 @@ class MainViewModel : ViewModel() {
     private val _myLocksLive = MutableLiveData<List<LockModel>>(emptyList())
     val myLocksLive: LiveData<List<LockModel>> = _myLocksLive
 
-    private var isScanning = false
-    private var lastUnlockTime = 0L
     private var lastLoggedStatus = ""
-    private val UNLOCK_COOLDOWN_MS = 10_000L
 
     var geofenceRadiusMeters = 50f
         private set
@@ -91,42 +84,20 @@ class MainViewModel : ViewModel() {
     var isGeofenceEnabled = false
     private var lastGeofenceUnlock = 0L
     private var wasInsideGeofence = false
+    private val UNLOCK_COOLDOWN_MS = 10_000L
 
     private var fusedLocationClient: FusedLocationProviderClient? = null
     private var locationCallback: LocationCallback? = null
     private var bluetoothAdapter: BluetoothAdapter? = null
 
-
     private var pendingManualOpen: Boolean = false
 
-    // ---- BLE Scan Callback ----
-    private val bleScanCallback = object : ScanCallback() {
-        override fun onScanResult(callbackType: Int, result: ScanResult?) {
-            result?.let { scanResult ->
-                val cleanMac = scanResult.device.address.replace(":", "").uppercase()
-                val rssi = scanResult.rssi
-                val targetLockId = deviceMap[cleanMac] ?: return
-
-                if (rssi > bleRssiThreshold) {
-                    val now = System.currentTimeMillis()
-                    if (now - lastUnlockTime > UNLOCK_COOLDOWN_MS) {
-                        val index = lockList.indexOf(targetLockId)
-                        currentLockId = targetLockId
-
-                        pendingManualOpen = false
-                        _statusText.postValue("BLE: Opening $targetLockId...")
-                        sendCommand(targetLockId, "OPEN")
-                        logRepository.logAccess(targetLockId, "AUTO_BLE", rssi)
-                        lastUnlockTime = now
-                        _toastMessage.postValue("AUTO BLE OPEN: $targetLockId")
-                        _bleDetectedLockIndex.postValue(index)
-                    }
-                }
-            }
-        }
-    }
+    // BLE advertiser state
+    private var isAdvertising = false
+    private var appContext: Context? = null
 
     fun init(context: Context, btAdapter: BluetoothAdapter?) {
+        appContext = context.applicationContext
         bluetoothAdapter = btAdapter
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
         setupLocationCallback()
@@ -149,7 +120,6 @@ class MainViewModel : ViewModel() {
         permissionRepository.getMyLockIds(uid) { lockIdRolePairs ->
             if (lockIdRolePairs.isEmpty()) {
                 myLocks = emptyList()
-                deviceMap = emptyMap()
                 _statusText.postValue("No locks found. Add one with the + button.")
                 _locksLoaded.postValue(true)
                 _myLocksLive.postValue(emptyList())
@@ -161,10 +131,6 @@ class MainViewModel : ViewModel() {
             lockRepository.fetchMyLocks(lockIds) { locks ->
                 myLocks = locks
                 _myLocksLive.postValue(locks)
-
-                deviceMap = locks
-                    .filter { it.macAddress.isNotEmpty() }
-                    .associate { it.macAddress.uppercase() to it.id }
 
                 if (myLocks.isNotEmpty()) {
                     currentLockId = myLocks[0].id
@@ -238,7 +204,7 @@ class MainViewModel : ViewModel() {
             onStatusChanged = { lockModel ->
                 val displayName = myLocks.find { it.id == currentLockId }?.name ?: currentLockId
                 _lockStatus.postValue(lockModel.status)
-                if (!isScanning && !isGeofenceEnabled) {
+                if (!isGeofenceEnabled) {
                     _statusText.postValue("[$displayName]\n${mapStatus(lockModel.status)}")
                 }
 
@@ -264,6 +230,34 @@ class MainViewModel : ViewModel() {
         "UNLOCKED" -> "🔓 Unlocked"
         else -> status
     }
+
+    // ===================== BLE ADVERTISER (NEW) =====================
+
+    fun setAutoUnlockEnabled(enabled: Boolean) {
+        val ctx = appContext ?: return
+
+        if (enabled) {
+            // Get beacon UUID from SharedPreferences (saved during activation)
+            val prefs = ctx.getSharedPreferences("smartlock_prefs", Context.MODE_PRIVATE)
+            val beaconUUID = prefs.getString("my_beacon_uuid", null)
+
+            if (beaconUUID.isNullOrEmpty()) {
+                _toastMessage.postValue("No beacon UUID. Activate a lock first!")
+                return
+            }
+
+            BleAdvertiserService.start(ctx, beaconUUID)
+            isAdvertising = true
+            _statusText.postValue("BLE: Advertising beacon for auto-unlock")
+            _toastMessage.postValue("Auto-unlock enabled")
+        } else {
+            BleAdvertiserService.stop(ctx)
+            isAdvertising = false
+            _statusText.postValue("BLE: Stopped")
+        }
+    }
+
+    // ===================== GEOFENCE =====================
 
     fun fetchLockLocation() {
         lockRepository.fetchLockLocation(
@@ -334,53 +328,6 @@ class MainViewModel : ViewModel() {
         wasInsideGeofence = false
     }
 
-    @SuppressLint("MissingPermission")
-    fun startBLEScan() {
-        if (bluetoothAdapter == null || isScanning) return
-
-        val scanner = bluetoothAdapter?.bluetoothLeScanner
-        if (scanner == null) {
-            Log.w(TAG, "BLE scanner not available yet — is Bluetooth fully on?")
-            _statusText.postValue("BLE: Bluetooth not ready. Turn it on and try again.")
-            _toastMessage.postValue("Turn on Bluetooth and try again")
-            return
-        }
-
-        try {
-            val settings = ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
-            scanner.startScan(null, settings, bleScanCallback)
-            isScanning = true
-            _statusText.postValue("BLE: scanning...")
-        } catch (e: SecurityException) {
-            Log.e(TAG, "BLE scan security exception: ${e.message}")
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    fun stopBLEScan() {
-        if (!isScanning) return
-
-        val scanner = bluetoothAdapter?.bluetoothLeScanner
-        if (scanner == null) {
-            Log.w(TAG, "BLE scanner not available — can't stop scan")
-            isScanning = false
-            return
-        }
-
-        try {
-            scanner.stopScan(bleScanCallback)
-            isScanning = false
-            _statusText.postValue("BLE: stopped")
-        } catch (e: SecurityException) {
-            Log.e(TAG, "BLE stop security exception: ${e.message}")
-        }
-    }
-
-    fun setAutoUnlockEnabled(enabled: Boolean) {
-        if (enabled) startBLEScan() else stopBLEScan()
-    }
-
     fun setBleRssiThreshold(rssi: Int) {
         bleRssiThreshold = rssi
     }
@@ -401,6 +348,6 @@ class MainViewModel : ViewModel() {
         super.onCleared()
         lockRepository.stopListening()
         stopLocationUpdates()
-        stopBLEScan()
+        appContext?.let { BleAdvertiserService.stop(it) }
     }
 }

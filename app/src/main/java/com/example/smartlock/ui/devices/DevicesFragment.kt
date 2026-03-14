@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import com.example.smartlock.R
+import com.example.smartlock.ui.activation.ActivationActivity
 import com.example.smartlock.ui.addlock.AddLockActivity
 import com.example.smartlock.ui.main.MainViewModel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -21,6 +22,14 @@ class DevicesFragment : Fragment() {
     private val viewModel: MainViewModel by activityViewModels()
 
     private val addLockLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            viewModel.reloadLocks()
+        }
+    }
+
+    private val activationLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
@@ -50,7 +59,8 @@ class DevicesFragment : Fragment() {
                 val items = locks.map { lock ->
                     val name = lock.name.ifEmpty { lock.id }
                     val mac = lock.macAddress.ifEmpty { "No MAC" }
-                    "$name\n$mac"
+                    val status = if (lock.activated) "✅ Activated" else "⏳ Not activated"
+                    "$name\n$mac — $status"
                 }
                 listView.adapter = ArrayAdapter(
                     requireContext(),
@@ -62,7 +72,21 @@ class DevicesFragment : Fragment() {
         }
 
         fabAdd.setOnClickListener {
-            addLockLauncher.launch(Intent(requireContext(), AddLockActivity::class.java))
+            // Show choice dialog: Activate new lock vs Add manually
+            val options = arrayOf("🔗 Activate New Lock (BLE)", "✏️ Add Lock Manually")
+            android.app.AlertDialog.Builder(requireContext())
+                .setTitle("Add Lock")
+                .setItems(options) { _, which ->
+                    when (which) {
+                        0 -> activationLauncher.launch(
+                            Intent(requireContext(), ActivationActivity::class.java)
+                        )
+                        1 -> addLockLauncher.launch(
+                            Intent(requireContext(), AddLockActivity::class.java)
+                        )
+                    }
+                }
+                .show()
         }
     }
 }

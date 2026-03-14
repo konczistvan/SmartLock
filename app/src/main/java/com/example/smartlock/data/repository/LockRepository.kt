@@ -118,7 +118,10 @@ class LockRepository {
                     val macAddress = snapshot.child("macAddress").getValue(String::class.java) ?: ""
                     val lat = snapshot.child("location/lat").getValue(Double::class.java)
                     val lng = snapshot.child("location/lng").getValue(Double::class.java)
-                    val addedBy = snapshot.child("addedBy").getValue(String::class.java) ?: ""
+                    val addedBy = snapshot.child("addedBy").getValue(String::class.java)
+                        ?: snapshot.child("owner").getValue(String::class.java) ?: ""
+                    val beaconUUID = snapshot.child("beaconUUID").getValue(String::class.java) ?: ""
+                    val activated = snapshot.child("activated").getValue(Boolean::class.java) ?: false
 
                     locks.add(
                         LockModel(
@@ -128,7 +131,9 @@ class LockRepository {
                             macAddress = macAddress,
                             latitude = lat,
                             longitude = lng,
-                            addedBy = addedBy
+                            addedBy = addedBy,
+                            beaconUUID = beaconUUID,
+                            activated = activated
                         )
                     )
                     fetched++
@@ -166,4 +171,3 @@ class LockRepository {
             .addOnFailureListener { onFailure(it.message ?: "Unknown error") }
     }
 }
-
