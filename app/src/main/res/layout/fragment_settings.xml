@@ -250,6 +250,85 @@
 
         </LinearLayout>
 
+        <!-- ── DEADZONE ── -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:layout_marginBottom="14dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
+
+                <FrameLayout
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:background="@drawable/bg_circle_orange"
+                    android:layout_marginEnd="10dp">
+                    <ImageView
+                        android:layout_width="17dp"
+                        android:layout_height="17dp"
+                        android:layout_gravity="center"
+                        android:src="@android:drawable/ic_menu_compass"
+                        app:tint="@color/orange" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Deadzone Radius"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"/>
+
+                <TextView
+                    android:id="@+id/tvDeadzoneValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="10 m"
+                    android:textSize="14sp"
+                    android:textColor="@color/orange"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Inside this range = already home (won't unlock)"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginBottom="10dp"
+                android:layout_marginStart="44dp"/>
+
+            <SeekBar
+                android:id="@+id/seekBarDeadzone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="49"
+                android:progress="9"
+                android:progressTint="@color/orange"
+                android:thumbTint="@color/orange"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="1 m" android:textSize="10sp" android:textColor="@color/text_hint"/>
+                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="50 m" android:textSize="10sp" android:textColor="@color/text_hint"/>
+            </LinearLayout>
+        </LinearLayout>
+
         <!-- ── ABOUT ── -->
         <LinearLayout
             android:layout_width="match_parent"

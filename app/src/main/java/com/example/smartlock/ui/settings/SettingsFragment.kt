@@ -25,18 +25,18 @@ class SettingsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val prefs = requireContext().getSharedPreferences(
-            "smartlock_prefs",
-            android.content.Context.MODE_PRIVATE
+            "smartlock_prefs", android.content.Context.MODE_PRIVATE
         )
 
         view.findViewById<TextView>(R.id.tvUserEmail).text =
             FirebaseClient.auth.currentUser?.email ?: ""
 
+        // ---- BLE RSSI ----
         val tvBle = view.findViewById<TextView>(R.id.tvBleValue)
         val seekBle = view.findViewById<SeekBar>(R.id.seekBarBle)
 
         val savedBle = prefs.getInt("ble_rssi", -80)
-        seekBle.progress = savedBle + 100                      // map to 0..60
+        seekBle.progress = savedBle + 100
         tvBle.text = "$savedBle dBm"
 
         seekBle.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -46,13 +46,17 @@ class SettingsFragment : Fragment() {
                 if (fromUser) {
                     prefs.edit().putInt("ble_rssi", rssi).apply()
                     viewModel.setBleRssiThreshold(rssi)
+                    val lockId = viewModel.currentLockId
+                    if (lockId.isNotEmpty()) {
+                        FirebaseClient.getReference("locks/$lockId/rssiThreshold").setValue(rssi)
+                    }
                 }
             }
-
             override fun onStartTrackingTouch(sb: SeekBar?) {}
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
 
+        // ---- GEOFENCE RADIUS ----
         val tvGeo = view.findViewById<TextView>(R.id.tvGeoValue)
         val seekGeo = view.findViewById<SeekBar>(R.id.seekBarGeo)
 
@@ -69,7 +73,27 @@ class SettingsFragment : Fragment() {
                     viewModel.setGeofenceRadius(radius.toFloat())
                 }
             }
+            override fun onStartTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {}
+        })
 
+        // ---- DEADZONE RADIUS ----
+        val tvDead = view.findViewById<TextView>(R.id.tvDeadzoneValue)
+        val seekDead = view.findViewById<SeekBar>(R.id.seekBarDeadzone)
+
+        val savedDead = prefs.getInt("geo_deadzone", 10)
+        seekDead.progress = (savedDead - 1).coerceIn(0, 49)
+        tvDead.text = "$savedDead m"
+
+        seekDead.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar?, p: Int, fromUser: Boolean) {
+                val radius = p + 1
+                tvDead.text = "$radius m"
+                if (fromUser) {
+                    prefs.edit().putInt("geo_deadzone", radius).apply()
+                    viewModel.setDeadzoneRadius(radius.toFloat())
+                }
+            }
             override fun onStartTrackingTouch(sb: SeekBar?) {}
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })

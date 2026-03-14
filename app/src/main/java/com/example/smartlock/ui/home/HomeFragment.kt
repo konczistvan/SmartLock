@@ -38,24 +38,23 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val tvEmail = view.findViewById<TextView>(R.id.tvUserEmail)
-        val tvStatus = view.findViewById<TextView>(R.id.tvStatus)
-        val ivLockIcon = view.findViewById<ImageView>(R.id.ivLockIcon)
-        val spinnerLocks = view.findViewById<Spinner>(R.id.spinnerLocks)
-        val btnOpen = view.findViewById<Button>(R.id.btnOpen)
-        val btnClose = view.findViewById<Button>(R.id.btnClose)
-        val btnManage = view.findViewById<Button>(R.id.btnManageAccess)
-        val switchBle = view.findViewById<SwitchMaterial>(R.id.switchAutoUnlock)
-        val switchGeo = view.findViewById<SwitchMaterial>(R.id.switchGeofence)
-        val layoutGeo = view.findViewById<View>(R.id.layoutGeoStatus)
-        val tvGeoStatus = view.findViewById<TextView>(R.id.tvGeofenceStatus)
-        val btnLogout = view.findViewById<View>(R.id.btnLogout)
+        val tvEmail: TextView = view.findViewById(R.id.tvUserEmail)
+        val tvStatus: TextView = view.findViewById(R.id.tvStatus)
+        val ivLockIcon: ImageView = view.findViewById(R.id.ivLockIcon)
+        val spinnerLocks: Spinner = view.findViewById(R.id.spinnerLocks)
+        val btnOpen: Button = view.findViewById(R.id.btnOpen)
+        val btnClose: Button = view.findViewById(R.id.btnClose)
+        val btnManage: Button = view.findViewById(R.id.btnManageAccess)
+        val switchBle: SwitchMaterial = view.findViewById(R.id.switchAutoUnlock)
+        val switchGeo: SwitchMaterial = view.findViewById(R.id.switchGeofence)
+        val layoutGeo: View = view.findViewById(R.id.layoutGeoStatus)
+        val tvGeoStatus: TextView = view.findViewById(R.id.tvGeofenceStatus)
+        val btnSetLocation: Button = view.findViewById(R.id.btnSetLockLocation)
+        val btnLogout: View = view.findViewById(R.id.btnLogout)
 
         tvEmail.text = FirebaseClient.currentUserEmail
 
-        viewModel.statusText.observe(viewLifecycleOwner) { text ->
-            tvStatus.text = text
-        }
+        viewModel.statusText.observe(viewLifecycleOwner) { tvStatus.text = it }
 
         viewModel.lockStatus.observe(viewLifecycleOwner) { status ->
             val colorRes = if (status == "UNLOCKED") R.color.green else R.color.primary
@@ -69,17 +68,12 @@ class HomeFragment : Fragment() {
             }
             val names = locks.map { it.name.ifEmpty { it.id } }
             spinnerLocks.adapter = ArrayAdapter(
-                requireContext(),
-                android.R.layout.simple_spinner_item,
-                names
-            ).apply {
-                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            }
+                requireContext(), android.R.layout.simple_spinner_item, names
+            ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
             spinnerLocks.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
                     viewModel.selectLock(locks[pos].id)
                 }
-
                 override fun onNothingSelected(p: AdapterView<*>?) {}
             }
         }
@@ -95,6 +89,15 @@ class HomeFragment : Fragment() {
             startActivity(Intent(requireContext(), ManageAccessActivity::class.java).apply {
                 putExtra("lockId", viewModel.currentLockId)
             })
+        }
+
+        // Save current GPS as lock location
+        btnSetLocation.setOnClickListener {
+            if (hasLocationPermission()) {
+                viewModel.saveCurrentLocationAsLock(requireContext())
+            } else {
+                requestLocationPermissions()
+            }
         }
 
         switchGeo.setOnCheckedChangeListener { _, checked ->
@@ -113,19 +116,28 @@ class HomeFragment : Fragment() {
             }
         }
 
-        viewModel.geofenceStatus.observe(viewLifecycleOwner) { s ->
-            tvGeoStatus.text = s
-        }
+        viewModel.geofenceStatus.observe(viewLifecycleOwner) { tvGeoStatus.text = it }
 
         switchBle.setOnCheckedChangeListener { _, checked ->
             if (checked) {
-                if (hasBluetoothPermissions()) viewModel.setAutoUnlockEnabled(true)
-                else {
+                if (hasBluetoothPermissions()) {
+                    viewModel.setAutoUnlockEnabled(true)
+                    val lockId = viewModel.currentLockId
+                    if (lockId.isNotEmpty()) {
+                        FirebaseClient.getReference("locks/$lockId/bleProximityEnabled")
+                            .setValue(true)
+                    }
+                } else {
                     requestBluetoothPermissions()
                     switchBle.isChecked = false
                 }
             } else {
                 viewModel.setAutoUnlockEnabled(false)
+                val lockId = viewModel.currentLockId
+                if (lockId.isNotEmpty()) {
+                    FirebaseClient.getReference("locks/$lockId/bleProximityEnabled")
+                        .setValue(false)
+                }
             }
         }
 
@@ -138,31 +150,20 @@ class HomeFragment : Fragment() {
     }
 
     private fun hasLocationPermission() =
-        ActivityCompat.checkSelfPermission(
-            requireContext(),
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) ==
-                PackageManager.PERMISSION_GRANTED
+        ActivityCompat.checkSelfPermission(requireContext(),
+            Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
     private fun hasBluetoothPermissions(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ActivityCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.BLUETOOTH_SCAN
-            ) == PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(
-                        requireContext(),
-                        Manifest.permission.BLUETOOTH_CONNECT
-                    ) == PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(
-                        requireContext(),
-                        Manifest.permission.BLUETOOTH_ADVERTISE
-                    ) == PackageManager.PERMISSION_GRANTED
+            ActivityCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(requireContext(),
+                        Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(requireContext(),
+                        Manifest.permission.BLUETOOTH_ADVERTISE) == PackageManager.PERMISSION_GRANTED
         } else {
-            ActivityCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
+            ActivityCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         }
     }
 
@@ -171,28 +172,25 @@ class HomeFragment : Fragment() {
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION
         )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) perms.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+            perms.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
         requestPermissionLauncher.launch(perms.toTypedArray())
     }
 
     private fun requestBluetoothPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            requestPermissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.BLUETOOTH_SCAN,
-                    Manifest.permission.BLUETOOTH_CONNECT,
-                    Manifest.permission.BLUETOOTH_ADVERTISE,  // NEW!
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                )
-            )
+            requestPermissionLauncher.launch(arrayOf(
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_ADVERTISE,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ))
         } else {
-            requestPermissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.BLUETOOTH,
-                    Manifest.permission.BLUETOOTH_ADMIN
-                )
-            )
+            requestPermissionLauncher.launch(arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_ADMIN
+            ))
         }
     }
 }

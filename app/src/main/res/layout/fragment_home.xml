@@ -278,27 +278,45 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
+            android:orientation="vertical"
             android:padding="14dp"
             android:layout_marginBottom="4dp"
             android:visibility="gone">
 
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:src="@android:drawable/ic_menu_mylocation"
-                android:layout_marginEnd="8dp"
-                app:tint="@color/orange" />
-
-            <TextView
-                android:id="@+id/tvGeofenceStatus"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="GPS: –"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@android:drawable/ic_menu_mylocation"
+                    android:layout_marginEnd="8dp"
+                    app:tint="@color/orange" />
+
+                <TextView
+                    android:id="@+id/tvGeofenceStatus"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="GPS: –"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_secondary"/>
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnSetLockLocation"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:text="📍 Set Current Location as Lock"
                 android:textSize="12sp"
-                android:textColor="@color/text_secondary"/>
+                android:textAllCaps="false"
+                android:layout_marginTop="10dp"
+                android:backgroundTint="@color/orange"
+                android:textColor="#FFFFFF"
+                style="@style/Widget.MaterialComponents.Button"/>
         </LinearLayout>
 
     </LinearLayout>

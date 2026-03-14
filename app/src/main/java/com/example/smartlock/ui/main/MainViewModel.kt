@@ -78,13 +78,18 @@ class MainViewModel : ViewModel() {
 
     private var lastLoggedStatus = ""
 
+    // Geofence
     var geofenceRadiusMeters = 50f
+        private set
+    var deadzoneRadiusMeters = 10f
         private set
     private var lockLocation: Location? = null
     var isGeofenceEnabled = false
     private var lastGeofenceUnlock = 0L
-    private var wasInsideGeofence = false
-    private val UNLOCK_COOLDOWN_MS = 10_000L
+    private val UNLOCK_COOLDOWN_MS = 30_000L
+
+    private enum class GeoZone { OUTSIDE, GREEN, DEADZONE }
+    private var lastZone: GeoZone = GeoZone.OUTSIDE
 
     private var fusedLocationClient: FusedLocationProviderClient? = null
     private var locationCallback: LocationCallback? = null
@@ -92,7 +97,6 @@ class MainViewModel : ViewModel() {
 
     private var pendingManualOpen: Boolean = false
 
-    // BLE advertiser state
     private var isAdvertising = false
     private var appContext: Context? = null
 
@@ -100,6 +104,11 @@ class MainViewModel : ViewModel() {
         appContext = context.applicationContext
         bluetoothAdapter = btAdapter
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+
+        val prefs = context.getSharedPreferences("smartlock_prefs", Context.MODE_PRIVATE)
+        deadzoneRadiusMeters = prefs.getInt("geo_deadzone", 10).toFloat()
+        geofenceRadiusMeters = prefs.getInt("geo_radius", 50).toFloat()
+
         setupLocationCallback()
     }
 
@@ -163,9 +172,7 @@ class MainViewModel : ViewModel() {
     }
 
     fun sendCommand(command: String) {
-        if (command == "OPEN") {
-            pendingManualOpen = true
-        }
+        if (command == "OPEN") pendingManualOpen = true
         sendCommand(currentLockId, command)
     }
 
@@ -208,10 +215,14 @@ class MainViewModel : ViewModel() {
                     _statusText.postValue("[$displayName]\n${mapStatus(lockModel.status)}")
                 }
 
+                // Log unlock events
                 if (lockModel.status == "UNLOCKED" && lastLoggedStatus != "UNLOCKED") {
                     if (pendingManualOpen) {
                         logRepository.logAccess(currentLockId, "MANUAL")
                         pendingManualOpen = false
+                    } else {
+                        // Check if ESP set a lastUnlockMethod (e.g. AUTO_BLE)
+                        checkAndLogEspUnlock()
                     }
                 }
 
@@ -225,19 +236,35 @@ class MainViewModel : ViewModel() {
         )
     }
 
+    /**
+     * Read lastUnlockMethod from Firebase. If ESP wrote "AUTO_BLE", log it and clear it.
+     */
+    private fun checkAndLogEspUnlock() {
+        if (currentLockId.isEmpty()) return
+        val ref = FirebaseClient.getReference("locks/$currentLockId/lastUnlockMethod")
+        ref.get().addOnSuccessListener { snap ->
+            val method = snap.getValue(String::class.java)
+            if (!method.isNullOrEmpty() && method != "NONE") {
+                logRepository.logAccess(currentLockId, method)
+                // Clear it so we don't log again
+                ref.setValue("NONE")
+                Log.d(TAG, "Logged ESP unlock: $method")
+            }
+        }
+    }
+
     private fun mapStatus(status: String) = when (status.uppercase()) {
         "LOCKED" -> "🔒 Locked"
         "UNLOCKED" -> "🔓 Unlocked"
         else -> status
     }
 
-    // ===================== BLE ADVERTISER (NEW) =====================
+    // ===================== BLE ADVERTISER =====================
 
     fun setAutoUnlockEnabled(enabled: Boolean) {
         val ctx = appContext ?: return
 
         if (enabled) {
-            // Get beacon UUID from SharedPreferences (saved during activation)
             val prefs = ctx.getSharedPreferences("smartlock_prefs", Context.MODE_PRIVATE)
             val beaconUUID = prefs.getString("my_beacon_uuid", null)
 
@@ -265,11 +292,41 @@ class MainViewModel : ViewModel() {
             onSuccess = { location ->
                 lockLocation = location
                 _geofenceStatusText.postValue(
-                    "GPS: coordinates OK (${location.latitude}, ${location.longitude})"
+                    "📍 Lock: (${String.format("%.5f", location.latitude)}, ${String.format("%.5f", location.longitude)})"
                 )
             },
             onFailure = { _geofenceStatusText.postValue("⚠ $it") }
         )
+    }
+
+    @SuppressLint("MissingPermission")
+    fun saveCurrentLocationAsLock(context: Context) {
+        if (currentLockId.isEmpty()) {
+            _toastMessage.postValue("No lock selected")
+            return
+        }
+        if (ActivityCompat.checkSelfPermission(context,
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            _toastMessage.postValue("Location permission required")
+            return
+        }
+
+        fusedLocationClient?.lastLocation?.addOnSuccessListener { location ->
+            if (location != null) {
+                val lockRef = FirebaseClient.getReference("locks/$currentLockId/location")
+                lockRef.child("lat").setValue(location.latitude)
+                lockRef.child("lng").setValue(location.longitude)
+
+                lockLocation = location
+                _toastMessage.postValue("Lock location saved!")
+                _geofenceStatusText.postValue(
+                    "📍 Lock: (${String.format("%.5f", location.latitude)}, ${String.format("%.5f", location.longitude)})"
+                )
+                Log.d(TAG, "Lock location saved: ${location.latitude}, ${location.longitude}")
+            } else {
+                _toastMessage.postValue("Cannot get current location. Try again.")
+            }
+        }
     }
 
     private fun setupLocationCallback() {
@@ -279,20 +336,31 @@ class MainViewModel : ViewModel() {
                 val target = lockLocation
 
                 if (target == null) {
-                    _geofenceStatusText.postValue("GPS: missing lock coordinates from Firebase")
+                    _geofenceStatusText.postValue("GPS: Set lock location first (button below)")
                     return
                 }
 
                 val distanceMeters = myLocation.distanceTo(target)
-                val inside = distanceMeters <= geofenceRadiusMeters
+
+                val currentZone = when {
+                    distanceMeters <= deadzoneRadiusMeters -> GeoZone.DEADZONE
+                    distanceMeters <= geofenceRadiusMeters -> GeoZone.GREEN
+                    else -> GeoZone.OUTSIDE
+                }
+
+                val zoneLabel = when (currentZone) {
+                    GeoZone.DEADZONE -> "🏠 INSIDE (deadzone)"
+                    GeoZone.GREEN -> "🟢 UNLOCK ZONE"
+                    GeoZone.OUTSIDE -> "⬜ OUTSIDE"
+                }
 
                 _geofenceStatusText.postValue(
-                    "GPS: ${distanceMeters.toInt()} m from lock " +
-                            "(limit: ${geofenceRadiusMeters.toInt()} m) " +
-                            if (inside) "✓ INSIDE" else "OUTSIDE"
+                    "GPS: ${distanceMeters.toInt()} m | $zoneLabel\n" +
+                            "(unlock: ${geofenceRadiusMeters.toInt()}m, dead: ${deadzoneRadiusMeters.toInt()}m)"
                 )
 
-                if (inside && !wasInsideGeofence) {
+                // UNLOCK only when transitioning OUTSIDE → GREEN
+                if (currentZone == GeoZone.GREEN && lastZone == GeoZone.OUTSIDE) {
                     val now = System.currentTimeMillis()
                     if (now - lastGeofenceUnlock > UNLOCK_COOLDOWN_MS) {
                         pendingManualOpen = false
@@ -300,10 +368,12 @@ class MainViewModel : ViewModel() {
                         logRepository.logAccess(currentLockId, "AUTO_GEOFENCE")
                         lastGeofenceUnlock = now
                         _statusText.postValue("GEOFENCE: $currentLockId opened!")
-                        _toastMessage.postValue("GEOFENCE AUTO OPEN: $currentLockId")
+                        _toastMessage.postValue("GEOFENCE AUTO OPEN: approaching lock")
+                        Log.d(TAG, "Geofence unlock: OUTSIDE → GREEN at ${distanceMeters.toInt()}m")
                     }
                 }
-                wasInsideGeofence = inside
+
+                lastZone = currentZone
             }
         }
     }
@@ -315,6 +385,8 @@ class MainViewModel : ViewModel() {
             ) != PackageManager.PERMISSION_GRANTED
         ) return
 
+        lastZone = GeoZone.OUTSIDE
+
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000L)
             .setMinUpdateDistanceMeters(2f).build()
 
@@ -325,24 +397,15 @@ class MainViewModel : ViewModel() {
 
     fun stopLocationUpdates() {
         locationCallback?.let { fusedLocationClient?.removeLocationUpdates(it) }
-        wasInsideGeofence = false
+        lastZone = GeoZone.OUTSIDE
     }
 
-    fun setBleRssiThreshold(rssi: Int) {
-        bleRssiThreshold = rssi
-    }
+    fun setBleRssiThreshold(rssi: Int) { bleRssiThreshold = rssi }
+    fun setGeofenceRadius(meters: Float) { geofenceRadiusMeters = meters }
+    fun setDeadzoneRadius(meters: Float) { deadzoneRadiusMeters = meters }
 
-    fun setGeofenceRadius(meters: Float) {
-        geofenceRadiusMeters = meters
-    }
-
-    fun onToastShown() {
-        _toastMessage.value = null
-    }
-
-    fun onBleIndexHandled() {
-        _bleDetectedLockIndex.value = null
-    }
+    fun onToastShown() { _toastMessage.value = null }
+    fun onBleIndexHandled() { _bleDetectedLockIndex.value = null }
 
     override fun onCleared() {
         super.onCleared()
