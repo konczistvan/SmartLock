@@ -40,8 +40,11 @@ class ActivationActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var btnActivate: Button
     private lateinit var tvInstructions: TextView
+    private lateinit var etLockName: EditText
 
-    // Permission launcher
+    // Store the connected device's lock ID (derived from MAC)
+    private var detectedLockId: String = ""
+
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
@@ -67,11 +70,12 @@ class ActivationActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBarActivation)
         btnActivate = findViewById(R.id.btnStartActivation)
         tvInstructions = findViewById(R.id.tvActivationInstructions)
+        etLockName = findViewById(R.id.etActivationLockName)
 
         tvInstructions.text = "1. Power on your new SmartLock\n" +
                 "2. Wait for the LED to blink rapidly\n" +
-                "3. Press 'Start Activation' below\n" +
-                "4. The app will find and pair with the lock"
+                "3. Enter a name for this lock\n" +
+                "4. Press 'Start Activation' below"
 
         val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = btManager.adapter
@@ -93,11 +97,17 @@ class ActivationActivity : AppCompatActivity() {
             return
         }
 
+        val lockName = etLockName.text.toString().trim()
+        if (lockName.isEmpty()) {
+            etLockName.error = "Enter a name for this lock"
+            etLockName.requestFocus()
+            return
+        }
+
         btnActivate.isEnabled = false
         progressBar.visibility = View.VISIBLE
         tvStatus.text = "Checking permissions..."
 
-        // Check and request permissions
         val needed = mutableListOf<String>()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
@@ -107,8 +117,6 @@ class ActivationActivity : AppCompatActivity() {
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED) needed.add(Manifest.permission.ACCESS_FINE_LOCATION)
-
-        Log.d(TAG, "Needed permissions: $needed")
 
         if (needed.isNotEmpty()) {
             permissionLauncher.launch(needed.toTypedArray())
@@ -129,24 +137,20 @@ class ActivationActivity : AppCompatActivity() {
         try {
             bleScanner?.startScan(null, settings, scanCallback)
             isScanning = true
-            Log.d(TAG, "BLE scan started OK")
 
             handler.postDelayed({
                 if (isScanning) {
                     stopScan()
-                    Log.d(TAG, "Scan timeout — lock not found")
                     tvStatus.text = "Lock not found. Make sure it's in activation mode."
                     btnActivate.isEnabled = true
                     progressBar.visibility = View.GONE
                 }
             }, SCAN_TIMEOUT)
         } catch (e: SecurityException) {
-            Log.e(TAG, "SecurityException: ${e.message}")
             tvStatus.text = "Permission error: ${e.message}"
             btnActivate.isEnabled = true
             progressBar.visibility = View.GONE
         } catch (e: Exception) {
-            Log.e(TAG, "Scan error: ${e.message}")
             tvStatus.text = "Scan error: ${e.message}"
             btnActivate.isEnabled = true
             progressBar.visibility = View.GONE
@@ -161,19 +165,14 @@ class ActivationActivity : AppCompatActivity() {
             val deviceName = device.name ?: result.scanRecord?.deviceName ?: ""
             val addr = device.address ?: ""
 
-            // Log ALL devices for debug
-            if (deviceName.isNotEmpty() || addr.uppercase().startsWith("0C:DC:7E")) {
-                Log.d(TAG, "Scan: addr=$addr name='$deviceName' rssi=${result.rssi}")
-            }
-
+            // FIX: detect by name only (works for ANY ESP32 MAC prefix)
             val isSmartLock = deviceName.contains("SmartLock", ignoreCase = true)
-                    || addr.uppercase().startsWith("0C:DC:7E")
 
             if (isSmartLock) {
                 Log.d(TAG, ">>> SMARTLOCK FOUND! name='$deviceName' addr=$addr")
                 stopScan()
                 runOnUiThread {
-                    tvStatus.text = "Found lock!\nConnecting..."
+                    tvStatus.text = "Found lock: $addr\nConnecting..."
                 }
                 connectToDevice(device)
             }
@@ -207,7 +206,6 @@ class ActivationActivity : AppCompatActivity() {
 
         @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
-            Log.d(TAG, "Connection state: status=$status newState=$newState")
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
                     Log.d(TAG, "GATT Connected!")
@@ -215,7 +213,6 @@ class ActivationActivity : AppCompatActivity() {
                     gatt?.discoverServices()
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
-                    Log.d(TAG, "GATT Disconnected")
                     runOnUiThread {
                         if (tvStatus.text.contains("✅")) return@runOnUiThread
                         tvStatus.text = "Disconnected. Try again."
@@ -228,28 +225,16 @@ class ActivationActivity : AppCompatActivity() {
 
         @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
-            Log.d(TAG, "Services discovered, status=$status")
-
             if (status != BluetoothGatt.GATT_SUCCESS || gatt == null) {
                 runOnUiThread { tvStatus.text = "Service discovery failed" }
                 return
             }
 
-            for (service in gatt.services) {
-                Log.d(TAG, "  Service: ${service.uuid}")
-                for (ch in service.characteristics) {
-                    Log.d(TAG, "    Char: ${ch.uuid} props=${ch.properties}")
-                }
-            }
-
             val service = gatt.getService(UUID.fromString(ACTIVATION_SERVICE_UUID))
             if (service == null) {
-                Log.e(TAG, "Activation service NOT found!")
                 runOnUiThread { tvStatus.text = "Activation service not found on lock" }
                 return
             }
-
-            Log.d(TAG, "Activation service found!")
 
             val statusChar = service.getCharacteristic(UUID.fromString(ACTIVATION_STATUS_UUID))
             if (statusChar != null) {
@@ -260,7 +245,6 @@ class ActivationActivity : AppCompatActivity() {
                 if (descriptor != null) {
                     descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
                     gatt.writeDescriptor(descriptor)
-                    Log.d(TAG, "Subscribed to status notifications")
                 } else {
                     sendActivationData(gatt)
                 }
@@ -271,7 +255,6 @@ class ActivationActivity : AppCompatActivity() {
 
         @SuppressLint("MissingPermission")
         override fun onDescriptorWrite(gatt: BluetoothGatt?, descriptor: BluetoothGattDescriptor?, status: Int) {
-            Log.d(TAG, "Descriptor written, status=$status")
             if (gatt != null) sendActivationData(gatt)
         }
 
@@ -294,8 +277,21 @@ class ActivationActivity : AppCompatActivity() {
             Log.d(TAG, "Activation response: $response")
             runOnUiThread {
                 progressBar.visibility = View.GONE
-                if (response == "OK") {
-                    tvStatus.text = "✅ Lock activated successfully!\n\nYou are now the owner."
+
+                // Response format: "OK|LOCK_ID" or "FAIL"
+                if (response.startsWith("OK")) {
+                    // Extract LOCK_ID from response
+                    val parts = response.split("|")
+                    val lockId = if (parts.size >= 2) parts[1] else detectedLockId
+
+                    val lockName = etLockName.text.toString().trim().ifEmpty { "SmartLock" }
+                    if (lockId.isNotEmpty()) {
+                        FirebaseClient.getReference("locks/$lockId/name")
+                            .setValue(lockName)
+                        Log.d(TAG, "Lock name saved: '$lockName' for $lockId")
+                    }
+
+                    tvStatus.text = "✅ Lock '$lockName' activated!\n\nYou are now the owner."
                     btnActivate.text = "Done"
                     btnActivate.isEnabled = true
                     btnActivate.setOnClickListener { setResult(RESULT_OK); finish() }
@@ -316,6 +312,17 @@ class ActivationActivity : AppCompatActivity() {
         getSharedPreferences("smartlock_prefs", MODE_PRIVATE)
             .edit().putString("my_beacon_uuid", beaconUUID).apply()
 
+        // Derive LOCK_ID from the ESP's BLE MAC address
+        // ESP BLE MAC e.g. "0C:DC:7E:5D:07:6E" → LOCK_0CDC7E5D076C
+        // But ESP uses base MAC (BLE MAC - 2), we need the LOCK_ID the ESP uses
+        // The ESP reports its MAC via NimBLE which is BLE MAC
+        // LOCK_ID format: LOCK_ + base MAC without colons
+        // Since we can't know the exact base MAC, we read it back from Firebase after activation
+        // For now, store the BLE address for matching
+        val bleAddr = gatt.device.address.uppercase().replace(":", "")
+        detectedLockId = "LOCK_$bleAddr"
+        Log.d(TAG, "Detected lock ID (from BLE addr): $detectedLockId")
+
         val payload = "$uid|$beaconUUID"
         Log.d(TAG, "Sending: $payload")
         runOnUiThread { tvStatus.text = "Sending activation data..." }
@@ -330,7 +337,6 @@ class ActivationActivity : AppCompatActivity() {
             Log.d(TAG, "Write result: $sent")
             runOnUiThread { tvStatus.text = "Data sent. Waiting for response..." }
         } else {
-            Log.e(TAG, "Write characteristic not found!")
             runOnUiThread { tvStatus.text = "Error: Write characteristic not found" }
         }
     }

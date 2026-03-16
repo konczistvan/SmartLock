@@ -1,17 +1,17 @@
 package com.example.smartlock.ui.devices
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import android.widget.ListView
-import android.widget.TextView
+import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import com.example.smartlock.R
+import com.example.smartlock.api.FirebaseClient
 import com.example.smartlock.ui.activation.ActivationActivity
 import com.example.smartlock.ui.addlock.AddLockActivity
 import com.example.smartlock.ui.main.MainViewModel
@@ -43,7 +43,6 @@ class DevicesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val tvTitle = view.findViewById<TextView>(R.id.tvDevicesTitle)
         val listView = view.findViewById<ListView>(R.id.lvDevices)
         val tvEmpty = view.findViewById<TextView>(R.id.tvEmptyDevices)
         val fabAdd = view.findViewById<FloatingActionButton>(R.id.fabAddDevice)
@@ -68,13 +67,19 @@ class DevicesFragment : Fragment() {
                     android.R.id.text1,
                     items
                 )
+
+                // Long press to rename
+                listView.setOnItemLongClickListener { _, _, position, _ ->
+                    val lock = locks[position]
+                    showRenameDialog(lock.id, lock.name)
+                    true
+                }
             }
         }
 
         fabAdd.setOnClickListener {
-            // Show choice dialog: Activate new lock vs Add manually
             val options = arrayOf("🔗 Activate New Lock (BLE)", "✏️ Add Lock Manually")
-            android.app.AlertDialog.Builder(requireContext())
+            AlertDialog.Builder(requireContext())
                 .setTitle("Add Lock")
                 .setItems(options) { _, which ->
                     when (which) {
@@ -88,5 +93,30 @@ class DevicesFragment : Fragment() {
                 }
                 .show()
         }
+    }
+
+    private fun showRenameDialog(lockId: String, currentName: String) {
+        val editText = EditText(requireContext()).apply {
+            setText(currentName)
+            hint = "Lock name"
+            setPadding(60, 40, 60, 20)
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Rename Lock")
+            .setView(editText)
+            .setPositiveButton("Save") { _, _ ->
+                val newName = editText.text.toString().trim()
+                if (newName.isNotEmpty()) {
+                    FirebaseClient.getReference("locks/$lockId/name")
+                        .setValue(newName)
+                        .addOnSuccessListener {
+                            Toast.makeText(requireContext(), "Renamed to '$newName'", Toast.LENGTH_SHORT).show()
+                            viewModel.reloadLocks()
+                        }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 }
