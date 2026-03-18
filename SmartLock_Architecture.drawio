@@ -1,272 +1,121 @@
-<mxfile host="app.diagrams.net" modified="2026-03-18T09:05:00.000Z" agent="Claude Code" version="24.0.0" etag="SmartLock-Complete-System" type="device">
-  <diagram name="SmartLock Complete System" id="SmartLock-Complete-System">
-    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+<mxfile host="app.diagrams.net" modified="2026-03-18T09:10:00.000Z" agent="Claude Code" version="24.0.0" etag="SmartLock-Simple-v3" type="device">
+  <diagram name="SmartLock System" id="SmartLock-System">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
 
         <!-- Title -->
-        <mxCell id="title" value="SmartLock Complete System Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1" vertex="1" parent="1">
-          <mxGeometry x="334" y="20" width="500" height="30" as="geometry"/>
+        <mxCell id="title" value="SmartLock System Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="264" y="30" width="300" height="30" as="geometry"/>
         </mxCell>
 
-        <!-- ========== ANDROID APP SECTION ========== -->
-        <mxCell id="android-section-title" value="ANDROID APPLICATION" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#333333;fontSize=14;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="40" y="70" width="480" height="35" as="geometry"/>
+        <!-- Android App -->
+        <mxCell id="android-app" value="Android App" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=14;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="80" y="100" width="200" height="80" as="geometry"/>
         </mxCell>
 
-        <!-- UI Layer -->
-        <mxCell id="ui-layer" value="UI LAYER" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#333333;fontSize=11;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="40" y="115" width="480" height="30" as="geometry"/>
+        <mxCell id="android-details" value="• UI (Activities/Fragments)&#xa;• MainViewModel&#xa;• Repositories&#xa;• FirebaseClient" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="90" y="120" width="180" height="50" as="geometry"/>
         </mxCell>
 
-        <mxCell id="activities" value="Activities&#xa;(Login, Main, Activation)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="40" y="150" width="155" height="50" as="geometry"/>
+        <!-- ESP32 Hardware -->
+        <mxCell id="esp32-hardware" value="ESP32 Hardware" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=14;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="547" y="100" width="200" height="80" as="geometry"/>
         </mxCell>
 
-        <mxCell id="fragments" value="Fragments&#xa;(Home, Devices, Logs)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="205" y="150" width="155" height="50" as="geometry"/>
+        <mxCell id="esp32-details" value="• Servo Motor (Lock)&#xa;• WiFi Module&#xa;• BLE Beacon&#xa;• Manual Button" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="557" y="120" width="180" height="50" as="geometry"/>
         </mxCell>
 
-        <mxCell id="ble-advertiser-service" value="BLE Advertiser&#xa;Service" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="370" y="150" width="150" height="50" as="geometry"/>
+        <!-- Firebase Backend -->
+        <mxCell id="firebase-backend" value="Firebase Backend" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=14;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="264" y="280" width="300" height="80" as="geometry"/>
         </mxCell>
 
-        <!-- ViewModel -->
-        <mxCell id="viewmodel-layer" value="VIEWMODEL" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#333333;fontSize=11;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="40" y="215" width="480" height="30" as="geometry"/>
+        <mxCell id="firebase-details" value="• Authentication (Email/Password)&#xa;• Realtime Database&#xa;• Collections: Users, Locks, Permissions, Logs" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="274" y="300" width="280" height="50" as="geometry"/>
         </mxCell>
 
-        <mxCell id="main-viewmodel" value="MainViewModel&#xa;(State Management)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;fontStyle=1" vertex="1" parent="1">
-          <mxGeometry x="145" y="250" width="270" height="45" as="geometry"/>
+        <!-- User -->
+        <mxCell id="user" value="User" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="165" y="420" width="30" height="40" as="geometry"/>
         </mxCell>
 
-        <!-- Repository Layer -->
-        <mxCell id="repository-layer" value="REPOSITORY LAYER" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#333333;fontSize=11;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="40" y="310" width="480" height="30" as="geometry"/>
+        <!-- Physical Lock -->
+        <mxCell id="physical-lock" value="Physical&#xa;Lock" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=11;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="612" y="420" width="70" height="50" as="geometry"/>
         </mxCell>
 
-        <mxCell id="repositories" value="Repositories&#xa;Auth | Lock | Permission | User | Log" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="40" y="345" width="480" height="45" as="geometry"/>
-        </mxCell>
-
-        <!-- API Layer -->
-        <mxCell id="api-layer" value="API LAYER" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#333333;fontSize=11;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="40" y="405" width="480" height="30" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="firebase-client-app" value="FirebaseClient&#xa;(Auth + Realtime DB)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;fontStyle=1" vertex="1" parent="1">
-          <mxGeometry x="145" y="440" width="270" height="45" as="geometry"/>
-        </mxCell>
-
-        <!-- ========== ESP32 HARDWARE SECTION ========== -->
-        <mxCell id="esp32-section-title" value="ESP32 HARDWARE (SMART LOCK)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#333333;fontSize=14;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="545" y="70" width="585" height="35" as="geometry"/>
-        </mxCell>
-
-        <!-- Hardware Components -->
-        <mxCell id="hardware-layer" value="HARDWARE COMPONENTS" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#333333;fontSize=11;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="545" y="115" width="585" height="30" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="servo-motor" value="Servo Motor&#xa;(Lock Mechanism)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="545" y="150" width="140" height="50" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="status-led" value="Status LED&#xa;(Visual Feedback)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="695" y="150" width="140" height="50" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="manual-button" value="Manual Button&#xa;(Physical Override)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="845" y="150" width="140" height="50" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="ble-beacon-hw" value="BLE Beacon&#xa;(iBeacon Protocol)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="995" y="150" width="135" height="50" as="geometry"/>
-        </mxCell>
-
-        <!-- ESP32 Software -->
-        <mxCell id="esp32-software-layer" value="ESP32 SOFTWARE" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#333333;fontSize=11;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="545" y="215" width="585" height="30" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="stream-handler" value="Firebase Stream Handler&#xa;(Real-time Commands)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;fontStyle=1" vertex="1" parent="1">
-          <mxGeometry x="545" y="250" width="180" height="50" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="lock-controller" value="Lock Controller&#xa;(Open/Close Logic)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;fontStyle=1" vertex="1" parent="1">
-          <mxGeometry x="735" y="250" width="180" height="50" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="button-handler" value="Button Handler&#xa;(Manual Control)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="925" y="250" width="205" height="50" as="geometry"/>
-        </mxCell>
-
-        <!-- ESP32 Network -->
-        <mxCell id="esp32-network-layer" value="NETWORK LAYER" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#333333;fontSize=11;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="545" y="315" width="585" height="30" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="wifi-module" value="WiFi Module&#xa;(Network Connection)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="545" y="350" width="190" height="50" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="firebase-client-esp" value="Firebase ESP Client&#xa;(Auth + Realtime DB)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;fontStyle=1" vertex="1" parent="1">
-          <mxGeometry x="745" y="350" width="190" height="50" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="health-monitor" value="Health Monitor&#xa;(Connection Check)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="945" y="350" width="185" height="50" as="geometry"/>
-        </mxCell>
-
-        <!-- ========== CLOUD BACKEND SECTION ========== -->
-        <mxCell id="cloud-section-title" value="CLOUD BACKEND (FIREBASE)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#333333;fontSize=14;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="40" y="510" width="1090" height="35" as="geometry"/>
-        </mxCell>
-
-        <!-- Firebase Services -->
-        <mxCell id="firebase-services" value="FIREBASE SERVICES" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#333333;fontSize=11;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="40" y="555" width="1090" height="30" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="firebase-auth" value="Firebase Authentication&#xa;(Email/Password)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="40" y="590" width="260" height="55" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="firebase-rtdb" value="Firebase Realtime Database&#xa;/locks/{LOCK_ID}/command&#xa;/locks/{LOCK_ID}/status" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;fontStyle=1" vertex="1" parent="1">
-          <mxGeometry x="310" y="590" width="260" height="55" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="firebase-data" value="Database Collections&#xa;Users | Locks | Permissions | Logs" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="580" y="590" width="260" height="55" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="firebase-stream" value="Realtime Stream&#xa;(WebSocket Connection)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="850" y="590" width="280" height="55" as="geometry"/>
-        </mxCell>
-
-        <!-- ========== DATA FLOW & COMMUNICATION ========== -->
-        <mxCell id="dataflow-title" value="COMMUNICATION PROTOCOLS" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#333333;fontSize=11;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="40" y="670" width="1090" height="30" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="protocol-1" value="Firebase Realtime DB&#xa;(Command/Status Sync)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=9;align=center;" vertex="1" parent="1">
-          <mxGeometry x="40" y="705" width="170" height="45" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="protocol-2" value="BLE Beacon&#xa;(Geofencing)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=9;align=center;" vertex="1" parent="1">
-          <mxGeometry x="220" y="705" width="170" height="45" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="protocol-3" value="BLE GATT&#xa;(Lock Activation)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=9;align=center;" vertex="1" parent="1">
-          <mxGeometry x="400" y="705" width="170" height="45" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="protocol-4" value="WiFi Connection&#xa;(Internet Access)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=9;align=center;" vertex="1" parent="1">
-          <mxGeometry x="580" y="705" width="170" height="45" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="protocol-5" value="Location Services&#xa;(Geofencing)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=9;align=center;" vertex="1" parent="1">
-          <mxGeometry x="760" y="705" width="170" height="45" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="protocol-6" value="Manual Control&#xa;(Physical Button)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=9;align=center;" vertex="1" parent="1">
-          <mxGeometry x="940" y="705" width="190" height="45" as="geometry"/>
-        </mxCell>
-
-        <!-- Key Features -->
-        <mxCell id="features-section" value="SYSTEM FEATURES" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#333333;fontSize=11;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="40" y="770" width="1090" height="25" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="features-text" value="• Real-time Remote Control (Firebase Realtime DB)     • BLE Auto-Unlock (Beacon Broadcasting)     • Geofencing-based Auto-Unlock&#xa;• Role-based Access Control (Owner/Guest)     • Manual Physical Override (Button)     • Health Monitoring &amp; Auto-Reconnect&#xa;• Access Logging (MANUAL/AUTO_BLE/AUTO_GEOFENCE)     • Multi-platform (Android App + ESP32 Hardware)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=9;" vertex="1" parent="1">
-          <mxGeometry x="45" y="800" width="1080" height="40" as="geometry"/>
-        </mxCell>
-
-        <!-- ========== ARROWS - ANDROID APP FLOW ========== -->
-
-        <!-- UI to ViewModel -->
-        <mxCell id="arrow-ui-vm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1" source="activities" target="main-viewmodel">
+        <!-- Arrow: User to Android App -->
+        <mxCell id="arrow-user-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;endArrow=classic;endFill=1;" edge="1" parent="1" source="user" target="android-app">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <mxCell id="arrow-fragments-vm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1" source="fragments" target="main-viewmodel">
+        <mxCell id="label-user-app" value="Control" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="140" y="250" width="50" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrow: Android App to Firebase -->
+        <mxCell id="arrow-app-firebase" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;endArrow=classic;endFill=1;startArrow=classic;startFill=1;" edge="1" parent="1" source="android-app" target="firebase-backend">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- ViewModel to Repositories -->
-        <mxCell id="arrow-vm-repo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1" source="main-viewmodel" target="repositories">
+        <mxCell id="label-app-firebase" value="Commands&#xa;Status" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="190" y="210" width="50" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrow: ESP32 to Firebase -->
+        <mxCell id="arrow-esp-firebase" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;endArrow=classic;endFill=1;startArrow=classic;startFill=1;" edge="1" parent="1" source="esp32-hardware" target="firebase-backend">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- Repositories to Firebase Client -->
-        <mxCell id="arrow-repo-firebase" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1" source="repositories" target="firebase-client-app">
+        <mxCell id="label-esp-firebase" value="Stream&#xa;Sync" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="587" y="210" width="50" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrow: ESP32 to Physical Lock -->
+        <mxCell id="arrow-esp-lock" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;endArrow=classic;endFill=1;" edge="1" parent="1" source="esp32-hardware" target="physical-lock">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- Firebase Client App to Cloud -->
-        <mxCell id="arrow-app-to-cloud" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;strokeWidth=3;strokeColor=#333333;entryPerimeter=0;" edge="1" parent="1" source="firebase-client-app" target="firebase-rtdb">
+        <mxCell id="label-esp-lock" value="Control&#xa;Servo" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="660" y="250" width="50" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrow: Android App to ESP32 (BLE) -->
+        <mxCell id="arrow-ble" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;endArrow=classic;endFill=1;dashed=1;dashPattern=5 5;" edge="1" parent="1" source="android-app" target="esp32-hardware">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- ========== ARROWS - ESP32 FLOW ========== -->
-
-        <!-- Hardware to Software -->
-        <mxCell id="arrow-servo-controller" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;entryPerimeter=0;" edge="1" parent="1" source="servo-motor" target="lock-controller">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="label-ble" value="BLE&#xa;Detection" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="364" y="120" width="50" height="30" as="geometry"/>
         </mxCell>
 
-        <mxCell id="arrow-led-controller" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1" source="status-led" target="lock-controller">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- Communication Methods -->
+        <mxCell id="comm-title" value="Communication:" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="80" y="510" width="120" height="20" as="geometry"/>
         </mxCell>
 
-        <mxCell id="arrow-button-handler" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1" source="manual-button" target="button-handler">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="comm-1" value="━━━  Firebase Realtime DB (Commands/Status)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="80" y="535" width="300" height="15" as="geometry"/>
         </mxCell>
 
-        <!-- Software to Network -->
-        <mxCell id="arrow-stream-network" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.3;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;entryPerimeter=0;" edge="1" parent="1" source="stream-handler" target="firebase-client-esp">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="comm-2" value="- - -  BLE Beacon (Auto-unlock Detection)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="80" y="555" width="300" height="15" as="geometry"/>
         </mxCell>
 
-        <mxCell id="arrow-controller-network" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.7;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;entryPerimeter=0;" edge="1" parent="1" source="lock-controller" target="firebase-client-esp">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="comm-3" value="━━━  WiFi (Internet Connection)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="80" y="575" width="300" height="15" as="geometry"/>
         </mxCell>
 
-        <mxCell id="arrow-button-to-controller" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;dashed=1;dashPattern=5 5;" edge="1" parent="1" source="button-handler" target="lock-controller">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- Features -->
+        <mxCell id="features-title" value="Features:" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="450" y="510" width="120" height="20" as="geometry"/>
         </mxCell>
 
-        <!-- Network to WiFi -->
-        <mxCell id="arrow-firebase-esp-wifi" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1" source="firebase-client-esp" target="wifi-module">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-
-        <!-- ESP32 to Cloud -->
-        <mxCell id="arrow-esp-to-cloud" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.7;entryY=0;entryDx=0;entryDy=0;strokeWidth=3;strokeColor=#333333;entryPerimeter=0;" edge="1" parent="1" source="firebase-client-esp" target="firebase-rtdb">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="840" y="420"/>
-              <mxPoint x="840" y="520"/>
-              <mxPoint x="492" y="520"/>
-            </Array>
-          </mxGeometry>
-        </mxCell>
-
-        <!-- BLE Communication -->
-        <mxCell id="arrow-ble-beacon" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#333333;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="ble-beacon-hw" target="ble-advertiser-service">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="950" y="175"/>
-              <mxPoint x="950" y="90"/>
-              <mxPoint x="550" y="90"/>
-              <mxPoint x="550" y="175"/>
-            </Array>
-          </mxGeometry>
-        </mxCell>
-
-        <mxCell id="ble-label" value="BLE Detection" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=8;" vertex="1" parent="1">
-          <mxGeometry x="690" y="75" width="80" height="20" as="geometry"/>
+        <mxCell id="features-list" value="• Real-time remote control&#xa;• BLE auto-unlock&#xa;• Geofencing&#xa;• Access logging&#xa;• Manual override" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="450" y="535" width="300" height="60" as="geometry"/>
         </mxCell>
 
       </root>
