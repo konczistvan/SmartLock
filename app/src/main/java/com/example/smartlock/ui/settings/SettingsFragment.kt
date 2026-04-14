@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import com.example.smartlock.R
@@ -31,11 +32,19 @@ class SettingsFragment : Fragment() {
         view.findViewById<TextView>(R.id.tvUserEmail).text =
             FirebaseClient.auth.currentUser?.email ?: ""
 
+        val lockId = viewModel.currentLockId
+        if (lockId.isEmpty()) {
+            Toast.makeText(requireContext(), "Please select a lock on the Home screen first!", Toast.LENGTH_LONG).show()
+            // Opcionális: Ha nincs zár, el is rejthetjük a csúszkákat, de a visszatérés (return) most megvédi a kódot a fagyástól.
+            return
+        }
+
         // ---- BLE RSSI ----
         val tvBle = view.findViewById<TextView>(R.id.tvBleValue)
         val seekBle = view.findViewById<SeekBar>(R.id.seekBarBle)
 
-        val savedBle = prefs.getInt("ble_rssi", -80)
+        // Itt már a lockId-vel keressük a mentett értéket!
+        val savedBle = prefs.getInt("ble_rssi_$lockId", -80)
         seekBle.progress = savedBle + 100
         tvBle.text = "$savedBle dBm"
 
@@ -44,12 +53,9 @@ class SettingsFragment : Fragment() {
                 val rssi = p - 100
                 tvBle.text = "$rssi dBm"
                 if (fromUser) {
-                    prefs.edit().putInt("ble_rssi", rssi).apply()
+                    prefs.edit().putInt("ble_rssi_$lockId", rssi).apply()
                     viewModel.setBleRssiThreshold(rssi)
-                    val lockId = viewModel.currentLockId
-                    if (lockId.isNotEmpty()) {
-                        FirebaseClient.getReference("locks/$lockId/rssiThreshold").setValue(rssi)
-                    }
+                    FirebaseClient.getReference("locks/$lockId/rssiThreshold").setValue(rssi)
                 }
             }
             override fun onStartTrackingTouch(sb: SeekBar?) {}
@@ -60,7 +66,7 @@ class SettingsFragment : Fragment() {
         val tvGeo = view.findViewById<TextView>(R.id.tvGeoValue)
         val seekGeo = view.findViewById<SeekBar>(R.id.seekBarGeo)
 
-        val savedGeo = prefs.getInt("geo_radius", 50)
+        val savedGeo = prefs.getInt("geo_radius_$lockId", 50)
         seekGeo.progress = (savedGeo - 3).coerceIn(0, 497)
         tvGeo.text = "$savedGeo m"
 
@@ -69,7 +75,7 @@ class SettingsFragment : Fragment() {
                 val radius = p + 3
                 tvGeo.text = "$radius m"
                 if (fromUser) {
-                    prefs.edit().putInt("geo_radius", radius).apply()
+                    prefs.edit().putInt("geo_radius_$lockId", radius).apply()
                     viewModel.setGeofenceRadius(radius.toFloat())
                 }
             }
@@ -81,7 +87,7 @@ class SettingsFragment : Fragment() {
         val tvDead = view.findViewById<TextView>(R.id.tvDeadzoneValue)
         val seekDead = view.findViewById<SeekBar>(R.id.seekBarDeadzone)
 
-        val savedDead = prefs.getInt("geo_deadzone", 10)
+        val savedDead = prefs.getInt("geo_deadzone_$lockId", 10)
         seekDead.progress = (savedDead - 1).coerceIn(0, 49)
         tvDead.text = "$savedDead m"
 
@@ -90,7 +96,7 @@ class SettingsFragment : Fragment() {
                 val radius = p + 1
                 tvDead.text = "$radius m"
                 if (fromUser) {
-                    prefs.edit().putInt("geo_deadzone", radius).apply()
+                    prefs.edit().putInt("geo_deadzone_$lockId", radius).apply()
                     viewModel.setDeadzoneRadius(radius.toFloat())
                 }
             }

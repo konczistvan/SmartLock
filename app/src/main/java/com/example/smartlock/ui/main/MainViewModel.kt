@@ -106,8 +106,6 @@ class MainViewModel : ViewModel() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
         val prefs = context.getSharedPreferences("smartlock_prefs", Context.MODE_PRIVATE)
-        deadzoneRadiusMeters = prefs.getInt("geo_deadzone", 10).toFloat()
-        geofenceRadiusMeters = prefs.getInt("geo_radius", 50).toFloat()
 
         setupLocationCallback()
     }
@@ -151,6 +149,7 @@ class MainViewModel : ViewModel() {
 
                 _locksLoaded.postValue(true)
                 Log.d(TAG, "Locks loaded: ${myLocks.map { it.name }}")
+                syncBleKeysToFirebase()
             }
         }
     }
@@ -180,15 +179,15 @@ class MainViewModel : ViewModel() {
         lockRepository.sendCommand(lockId, command)
     }
 
-    fun selectLock(position: Int) {
-        if (position >= myLocks.size) return
-        selectLock(myLocks[position].id)
-    }
-
     fun selectLock(lockId: String) {
         if (lockId == currentLockId) return
         currentLockId = lockId
         pendingManualOpen = false
+
+        val prefs = appContext?.getSharedPreferences("smartlock_prefs", Context.MODE_PRIVATE)
+        geofenceRadiusMeters = prefs?.getInt("geo_radius_$lockId", 50)?.toFloat() ?: 50f
+        deadzoneRadiusMeters = prefs?.getInt("geo_deadzone_$lockId", 10)?.toFloat() ?: 10f
+        bleRssiThreshold = prefs?.getInt("ble_rssi_$lockId", -80) ?: -80
 
         val uid = FirebaseClient.auth.currentUser?.uid ?: ""
         FirebaseClient.getReference("permissions/$currentLockId/$uid/role")
@@ -412,5 +411,34 @@ class MainViewModel : ViewModel() {
         lockRepository.stopListening()
         stopLocationUpdates()
         appContext?.let { BleAdvertiserService.stop(it) }
+    }
+    // ===================== BLE KEY SYNC =====================
+
+    private fun getOrGenerateBleUuid(context: Context): String {
+        val prefs = context.getSharedPreferences("smartlock_prefs", Context.MODE_PRIVATE)
+        // Megnézzük, van-e már kulcsunk (ugyanazt a változót használjuk, amit az ActivationActivity)
+        var uuid = prefs.getString("my_beacon_uuid", null)
+        if (uuid == null) {
+            // Ha nincs, csinálunk egy újat
+            uuid = java.util.UUID.randomUUID().toString().replace("-", "").lowercase()
+            prefs.edit().putString("my_beacon_uuid", uuid).apply()
+            Log.d(TAG, "Új BLE kulcs generálva: $uuid")
+        }
+        return uuid
+    }
+
+    private fun syncBleKeysToFirebase() {
+        val ctx = appContext ?: return
+        val uid = FirebaseClient.auth.currentUser?.uid ?: return
+        val myBleKey = getOrGenerateBleUuid(ctx)
+
+        // Végigmegyünk az összes záron, amihez a felhasználónak joga van, és beírjuk a kulcsot
+        myLocks.forEach { lock ->
+            FirebaseClient.getReference("locks/${lock.id}/authorizedBeacons/$uid")
+                .setValue(myBleKey)
+                .addOnSuccessListener {
+                    Log.d(TAG, "Sikeres kulcs szinkronizáció a zárhoz: ${lock.id}")
+                }
+        }
     }
 }

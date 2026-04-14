@@ -35,7 +35,14 @@ class PermissionRepository {
     ) {
         FirebaseClient.getReference("permissions/$lockId/$targetUid")
             .removeValue()
-            .addOnSuccessListener { onSuccess() }
+            .addOnSuccessListener {
+
+                FirebaseClient.getReference("locks/$lockId/authorizedBeacons/$targetUid")
+                    .removeValue()
+                    .addOnSuccessListener { onSuccess() }
+                    .addOnFailureListener { onFailure(it.message ?: "Failed to remove BLE key") }
+
+            }
             .addOnFailureListener { onFailure(it.message ?: "Unknown error") }
     }
 
@@ -53,6 +60,7 @@ class PermissionRepository {
                         val expiresAt = userSnap.child("expiresAt").getValue(Long::class.java)
                         if (expiresAt != null && expiresAt < System.currentTimeMillis()) {
                             FirebaseClient.getReference("permissions/$lockId/$uid").removeValue()
+                            FirebaseClient.getReference("locks/$lockId/authorizedBeacons/$uid").removeValue()
                             continue
                         }
 
