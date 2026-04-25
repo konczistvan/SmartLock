@@ -37,15 +37,26 @@ class MainViewModel : ViewModel() {
     val lockDisplayNames: List<String>
         get() = myLocks.map { it.name.ifEmpty { it.id } }
 
-    val lockList: List<String>
-        get() = myLocks.map { it.id }
-
     var currentLockId: String = ""
         private set
 
     private var myRoleForCurrentLock: String = "guest"
 
-    fun isOwnerOfCurrentLock(): Boolean = myRoleForCurrentLock == "owner"
+    // --- ÁLLAPOTGÉP (Makro) ---
+    enum class UserState { HOME, AWAY, APPROACHING }
+    private val _userState = MutableLiveData(UserState.HOME)
+    val userState: LiveData<UserState> = _userState
+
+    var isHybridModeEnabled = false
+        private set
+
+    // --- SZENZORFÚZIÓ (Mikro + Makro) ---
+    private val _microState = MutableLiveData("UNKNOWN")
+    private var microStateListener: com.google.firebase.database.ValueEventListener? = null
+
+    private val _unifiedStateText = MutableLiveData<String>("🏠 Betöltés...")
+    val unifiedStateText: LiveData<String> = _unifiedStateText
+    // -----------------------------------
 
     private val _locksLoaded = MutableLiveData(false)
     val locksLoaded: LiveData<Boolean> = _locksLoaded
@@ -59,43 +70,29 @@ class MainViewModel : ViewModel() {
     private val _toastMessage = MutableLiveData<String?>()
     val toastMessage: LiveData<String?> = _toastMessage
 
-    private val _isLoggedIn = MutableLiveData(false)
-    val isLoggedIn: LiveData<Boolean> = _isLoggedIn
-
-    private val _bleDetectedLockIndex = MutableLiveData<Int?>()
-    val bleDetectedLockIndex: LiveData<Int?> = _bleDetectedLockIndex
-
     private val _lockStatus = MutableLiveData("LOCKED")
     val lockStatus: LiveData<String> = _lockStatus
 
     private val _currentLockRole = MutableLiveData("guest")
     val currentLockRole: LiveData<String> = _currentLockRole
 
-    val geofenceStatus: LiveData<String> = _geofenceStatusText
-
     private val _myLocksLive = MutableLiveData<List<LockModel>>(emptyList())
     val myLocksLive: LiveData<List<LockModel>> = _myLocksLive
 
     private var lastLoggedStatus = ""
 
-    // Geofence
     var geofenceRadiusMeters = 50f
         private set
     var deadzoneRadiusMeters = 10f
         private set
     private var lockLocation: Location? = null
-    var isGeofenceEnabled = false
-    private var lastGeofenceUnlock = 0L
-    private val UNLOCK_COOLDOWN_MS = 30_000L
-
-    private enum class GeoZone { OUTSIDE, GREEN, DEADZONE }
-    private var lastZone: GeoZone = GeoZone.OUTSIDE
 
     private var fusedLocationClient: FusedLocationProviderClient? = null
     private var locationCallback: LocationCallback? = null
     private var bluetoothAdapter: BluetoothAdapter? = null
 
     private var pendingManualOpen: Boolean = false
+    private var manualUnlockStartTime: Long = 0L
 
     private var isAdvertising = false
     private var appContext: Context? = null
@@ -105,50 +102,39 @@ class MainViewModel : ViewModel() {
         bluetoothAdapter = btAdapter
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
-        val prefs = context.getSharedPreferences("smartlock_prefs", Context.MODE_PRIVATE)
-
         setupLocationCallback()
     }
 
     fun loginAndLoadLocks() {
-        val uid = FirebaseClient.auth.currentUser?.uid
-        if (uid == null) {
-            _statusText.value = "Not logged in"
-            return
-        }
-        _statusText.value = "Loading locks..."
-        _isLoggedIn.value = true
+        val uid = FirebaseClient.auth.currentUser?.uid ?: return
+        _statusText.value = "Zárak betöltése..."
         loadMyLocks()
     }
 
     private fun loadMyLocks() {
         val uid = FirebaseClient.auth.currentUser?.uid ?: return
-
         permissionRepository.getMyLockIds(uid) { lockIdRolePairs ->
             if (lockIdRolePairs.isEmpty()) {
                 myLocks = emptyList()
-                _statusText.postValue("No locks found. Add one with the + button.")
+                _statusText.postValue("Nincs zár. Adj hozzá a + gombbal.")
                 _locksLoaded.postValue(true)
                 _myLocksLive.postValue(emptyList())
                 return@getMyLockIds
             }
 
             val lockIds = lockIdRolePairs.map { it.first }
-
             lockRepository.fetchMyLocks(lockIds) { locks ->
                 myLocks = locks
                 _myLocksLive.postValue(locks)
 
                 if (myLocks.isNotEmpty()) {
                     currentLockId = myLocks[0].id
-                    myRoleForCurrentLock = lockIdRolePairs
-                        .firstOrNull { it.first == currentLockId }?.second ?: "guest"
+                    myRoleForCurrentLock = lockIdRolePairs.firstOrNull { it.first == currentLockId }?.second ?: "guest"
                     _currentLockRole.postValue(myRoleForCurrentLock)
                     listenToCurrentLockStatus()
                 }
 
                 _locksLoaded.postValue(true)
-                Log.d(TAG, "Locks loaded: ${myLocks.map { it.name }}")
                 syncBleKeysToFirebase()
             }
         }
@@ -161,6 +147,7 @@ class MainViewModel : ViewModel() {
     }
 
     fun openLock() {
+        manualUnlockStartTime = System.currentTimeMillis()
         pendingManualOpen = true
         sendCommand(currentLockId, "OPEN")
     }
@@ -171,8 +158,8 @@ class MainViewModel : ViewModel() {
     }
 
     fun sendCommand(command: String) {
-        if (command == "OPEN") pendingManualOpen = true
-        sendCommand(currentLockId, command)
+        if (command == "OPEN") openLock()
+        else sendCommand(currentLockId, command)
     }
 
     private fun sendCommand(lockId: String, command: String) {
@@ -190,16 +177,13 @@ class MainViewModel : ViewModel() {
         bleRssiThreshold = prefs?.getInt("ble_rssi_$lockId", -80) ?: -80
 
         val uid = FirebaseClient.auth.currentUser?.uid ?: ""
-        FirebaseClient.getReference("permissions/$currentLockId/$uid/role")
-            .get()
-            .addOnSuccessListener { snap ->
-                val role = snap.getValue(String::class.java) ?: "guest"
-                myRoleForCurrentLock = role
-                _currentLockRole.postValue(role)
-            }
+        FirebaseClient.getReference("permissions/$currentLockId/$uid/role").get().addOnSuccessListener { snap ->
+            myRoleForCurrentLock = snap.getValue(String::class.java) ?: "guest"
+            _currentLockRole.postValue(myRoleForCurrentLock)
+        }
 
         listenToCurrentLockStatus()
-        if (isGeofenceEnabled) fetchLockLocation()
+        if (isHybridModeEnabled) fetchLockLocation()
     }
 
     fun listenToCurrentLockStatus() {
@@ -210,34 +194,45 @@ class MainViewModel : ViewModel() {
             onStatusChanged = { lockModel ->
                 val displayName = myLocks.find { it.id == currentLockId }?.name ?: currentLockId
                 _lockStatus.postValue(lockModel.status)
-                if (!isGeofenceEnabled) {
-                    _statusText.postValue("[$displayName]\n${mapStatus(lockModel.status)}")
-                }
+                _statusText.postValue("[$displayName]\n${mapStatus(lockModel.status)}")
 
-                // Log unlock events
                 if (lockModel.status == "UNLOCKED" && lastLoggedStatus != "UNLOCKED") {
+
+                    // HAZATÉRTÜNK!
+                    if (isHybridModeEnabled) {
+                        _userState.postValue(UserState.HOME)
+                        // JAVÍTVA: Explicit paraméter átadása
+                        updateUnifiedState(macroParam = UserState.HOME)
+                    }
+
                     if (pendingManualOpen) {
                         logRepository.logAccess(currentLockId, "MANUAL")
                         pendingManualOpen = false
                     } else {
-                        // Check if ESP set a lastUnlockMethod (e.g. AUTO_BLE)
                         checkAndLogEspUnlock()
                     }
                 }
 
-                if (lockModel.status == "LOCKED") {
-                    pendingManualOpen = false
-                }
-
+                if (lockModel.status == "LOCKED") pendingManualOpen = false
                 lastLoggedStatus = lockModel.status
-            },
-            onError = { _statusText.postValue("Error: $it") }
+            }
         )
+
+        // --- ESP32 MIKRO-ÁLLAPOT FIGYELÉSE ---
+        microStateListener?.let { FirebaseClient.getReference("locks/$currentLockId/microState").removeEventListener(it) }
+
+        microStateListener = object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                val newMicro = snapshot.getValue(String::class.java) ?: "UNKNOWN"
+                _microState.postValue(newMicro)
+                // JAVÍTVA: Explicit paraméter átadása, hogy ne a régi _microState.value-t olvassa
+                updateUnifiedState(microParam = newMicro)
+            }
+            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
+        }
+        FirebaseClient.getReference("locks/$currentLockId/microState").addValueEventListener(microStateListener!!)
     }
 
-    /**
-     * Read lastUnlockMethod from Firebase. If ESP wrote "AUTO_BLE", log it and clear it.
-     */
     private fun checkAndLogEspUnlock() {
         if (currentLockId.isEmpty()) return
         val ref = FirebaseClient.getReference("locks/$currentLockId/lastUnlockMethod")
@@ -245,9 +240,7 @@ class MainViewModel : ViewModel() {
             val method = snap.getValue(String::class.java)
             if (!method.isNullOrEmpty() && method != "NONE") {
                 logRepository.logAccess(currentLockId, method)
-                // Clear it so we don't log again
                 ref.setValue("NONE")
-                Log.d(TAG, "Logged ESP unlock: $method")
             }
         }
     }
@@ -258,72 +251,77 @@ class MainViewModel : ViewModel() {
         else -> status
     }
 
-    // ===================== BLE ADVERTISER =====================
+    // --- SZENZORFÚZIÓ MATEK (JAVÍTVA) ---
+    private fun updateUnifiedState(macroParam: UserState? = null, microParam: String? = null) {
+        // Ha explicit átadjuk, azt használja, különben a LiveData (esetleg régi) értékét
+        val macro = macroParam ?: _userState.value ?: UserState.HOME
+        val micro = microParam ?: _microState.value ?: "UNKNOWN"
 
-    fun setAutoUnlockEnabled(enabled: Boolean) {
-        val ctx = appContext ?: return
+        val text = when {
+            macro == UserState.AWAY -> "🚶 TÁVOL (Házon kívül)"
+            macro == UserState.APPROACHING && micro == "AWAY" -> "🎯 KÖZELEDÉS (Zónában, várjuk a BLE jelet)"
+            macro == UserState.APPROACHING && micro == "OUTSIDE" -> "🚪 AJTÓ ELŐTT (Nyitás folyamatban...)"
+            macro == UserState.HOME && micro == "INSIDE" -> "🛋️ BENT A HÁZBAN (Zárva, Biztonságban)"
+            macro == UserState.HOME && micro == "OUTSIDE" -> "🌳 KINT AZ UDVARON (Szemétkivitel)"
+            macro == UserState.HOME && micro == "AWAY" -> "🏠 OTTHON (Alszik a rendszer)"
+            else -> "🏠 OTTHON (Készenlét)"
+        }
+        _unifiedStateText.postValue(text)
+    }
 
-        if (enabled) {
-            val prefs = ctx.getSharedPreferences("smartlock_prefs", Context.MODE_PRIVATE)
-            val beaconUUID = prefs.getString("my_beacon_uuid", null)
-
-            if (beaconUUID.isNullOrEmpty()) {
-                _toastMessage.postValue("No beacon UUID. Activate a lock first!")
-                return
-            }
-
-            BleAdvertiserService.start(ctx, beaconUUID)
-            isAdvertising = true
-            _statusText.postValue("BLE: Advertising beacon for auto-unlock")
-            _toastMessage.postValue("Auto-unlock enabled")
-        } else {
-            BleAdvertiserService.stop(ctx)
-            isAdvertising = false
-            _statusText.postValue("BLE: Stopped")
+    // --- HIBRID VEZÉRLÉS (Bluetooth KI/BE) ---
+    fun setHybridMode(enabled: Boolean) {
+        isHybridModeEnabled = enabled
+        if (!enabled) {
+            _userState.postValue(UserState.HOME)
+            updateUnifiedState(macroParam = UserState.HOME)
+            stopBleAdvertising()
         }
     }
 
-    // ===================== GEOFENCE =====================
+    @SuppressLint("MissingPermission")
+    private fun startBleAdvertising() {
+        if (isAdvertising) return
+        val ctx = appContext ?: return
+        val prefs = ctx.getSharedPreferences("smartlock_prefs", Context.MODE_PRIVATE)
+        val beaconUUID = prefs.getString("my_beacon_uuid", null) ?: return
 
+        BleAdvertiserService.start(ctx, beaconUUID)
+        isAdvertising = true
+        if (currentLockId.isNotEmpty()) {
+            FirebaseClient.getReference("locks/$currentLockId/bleProximityEnabled").setValue(true)
+        }
+    }
+
+    private fun stopBleAdvertising() {
+        if (!isAdvertising) return
+        val ctx = appContext ?: return
+        BleAdvertiserService.stop(ctx)
+        isAdvertising = false
+        if (currentLockId.isNotEmpty()) {
+            FirebaseClient.getReference("locks/$currentLockId/bleProximityEnabled").setValue(false)
+        }
+    }
+
+    // --- GEOFENCE (Helymeghatározás) ---
     fun fetchLockLocation() {
         lockRepository.fetchLockLocation(
             lockId = currentLockId,
-            onSuccess = { location ->
-                lockLocation = location
-                _geofenceStatusText.postValue(
-                    "📍 Lock: (${String.format("%.5f", location.latitude)}, ${String.format("%.5f", location.longitude)})"
-                )
-            },
+            onSuccess = { location -> lockLocation = location },
             onFailure = { _geofenceStatusText.postValue("⚠ $it") }
         )
     }
 
     @SuppressLint("MissingPermission")
     fun saveCurrentLocationAsLock(context: Context) {
-        if (currentLockId.isEmpty()) {
-            _toastMessage.postValue("No lock selected")
-            return
-        }
-        if (ActivityCompat.checkSelfPermission(context,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            _toastMessage.postValue("Location permission required")
-            return
-        }
-
+        if (currentLockId.isEmpty()) return
         fusedLocationClient?.lastLocation?.addOnSuccessListener { location ->
             if (location != null) {
                 val lockRef = FirebaseClient.getReference("locks/$currentLockId/location")
                 lockRef.child("lat").setValue(location.latitude)
                 lockRef.child("lng").setValue(location.longitude)
-
                 lockLocation = location
-                _toastMessage.postValue("Lock location saved!")
-                _geofenceStatusText.postValue(
-                    "📍 Lock: (${String.format("%.5f", location.latitude)}, ${String.format("%.5f", location.longitude)})"
-                )
-                Log.d(TAG, "Lock location saved: ${location.latitude}, ${location.longitude}")
-            } else {
-                _toastMessage.postValue("Cannot get current location. Try again.")
+                _toastMessage.postValue("Zár helyzete elmentve!")
             }
         }
     }
@@ -332,71 +330,49 @@ class MainViewModel : ViewModel() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val myLocation = result.lastLocation ?: return
-                val target = lockLocation
-
-                if (target == null) {
-                    _geofenceStatusText.postValue("GPS: Set lock location first (button below)")
-                    return
-                }
+                val target = lockLocation ?: return
 
                 val distanceMeters = myLocation.distanceTo(target)
+                _geofenceStatusText.postValue("Távolság a zártól: ${distanceMeters.toInt()} m")
 
-                val currentZone = when {
-                    distanceMeters <= deadzoneRadiusMeters -> GeoZone.DEADZONE
-                    distanceMeters <= geofenceRadiusMeters -> GeoZone.GREEN
-                    else -> GeoZone.OUTSIDE
-                }
+                if (isHybridModeEnabled) {
+                    val currentState = _userState.value ?: UserState.HOME
 
-                val zoneLabel = when (currentZone) {
-                    GeoZone.DEADZONE -> "🏠 INSIDE (deadzone)"
-                    GeoZone.GREEN -> "🟢 UNLOCK ZONE"
-                    GeoZone.OUTSIDE -> "⬜ OUTSIDE"
-                }
-
-                _geofenceStatusText.postValue(
-                    "GPS: ${distanceMeters.toInt()} m | $zoneLabel\n" +
-                            "(unlock: ${geofenceRadiusMeters.toInt()}m, dead: ${deadzoneRadiusMeters.toInt()}m)"
-                )
-
-                // UNLOCK only when transitioning OUTSIDE → GREEN
-                if (currentZone == GeoZone.GREEN && lastZone == GeoZone.OUTSIDE) {
-                    val now = System.currentTimeMillis()
-                    if (now - lastGeofenceUnlock > UNLOCK_COOLDOWN_MS) {
-                        pendingManualOpen = false
-                        sendCommand(currentLockId, "OPEN")
-                        logRepository.logAccess(currentLockId, "AUTO_GEOFENCE")
-                        lastGeofenceUnlock = now
-                        _statusText.postValue("GEOFENCE: $currentLockId opened!")
-                        _toastMessage.postValue("GEOFENCE AUTO OPEN: approaching lock")
-                        Log.d(TAG, "Geofence unlock: OUTSIDE → GREEN at ${distanceMeters.toInt()}m")
+                    // Ha elhagytuk a zónát (több mint 50m) -> ALTATÁS
+                    if (distanceMeters > geofenceRadiusMeters) {
+                        if (currentState != UserState.AWAY) {
+                            _userState.postValue(UserState.AWAY)
+                            updateUnifiedState(macroParam = UserState.AWAY) // JAVÍTVA
+                            stopBleAdvertising()
+                        }
+                    }
+                    // Ha a zónán belül vagyunk (kevesebb mint 50m) -> ÉBRENLÉT
+                    else {
+                        if (currentState == UserState.AWAY) {
+                            _userState.postValue(UserState.APPROACHING)
+                            updateUnifiedState(macroParam = UserState.APPROACHING) // JAVÍTVA
+                            startBleAdvertising()
+                        } else if (currentState == UserState.APPROACHING && distanceMeters < 15f) {
+                            _userState.postValue(UserState.HOME)
+                            updateUnifiedState(macroParam = UserState.HOME) // JAVÍTVA
+                        } else if (currentState == UserState.HOME && !isAdvertising) {
+                            startBleAdvertising()
+                        }
                     }
                 }
-
-                lastZone = currentZone
             }
         }
     }
 
     @SuppressLint("MissingPermission")
     fun startLocationUpdates(context: Context) {
-        if (ActivityCompat.checkSelfPermission(
-                context, Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) return
-
-        lastZone = GeoZone.OUTSIDE
-
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000L)
             .setMinUpdateDistanceMeters(2f).build()
-
-        fusedLocationClient?.requestLocationUpdates(
-            request, locationCallback!!, Looper.getMainLooper()
-        )
+        fusedLocationClient?.requestLocationUpdates(request, locationCallback!!, Looper.getMainLooper())
     }
 
     fun stopLocationUpdates() {
         locationCallback?.let { fusedLocationClient?.removeLocationUpdates(it) }
-        lastZone = GeoZone.OUTSIDE
     }
 
     fun setBleRssiThreshold(rssi: Int) { bleRssiThreshold = rssi }
@@ -404,25 +380,19 @@ class MainViewModel : ViewModel() {
     fun setDeadzoneRadius(meters: Float) { deadzoneRadiusMeters = meters }
 
     fun onToastShown() { _toastMessage.value = null }
-    fun onBleIndexHandled() { _bleDetectedLockIndex.value = null }
-
     override fun onCleared() {
         super.onCleared()
         lockRepository.stopListening()
         stopLocationUpdates()
         appContext?.let { BleAdvertiserService.stop(it) }
     }
-    // ===================== BLE KEY SYNC =====================
 
     private fun getOrGenerateBleUuid(context: Context): String {
         val prefs = context.getSharedPreferences("smartlock_prefs", Context.MODE_PRIVATE)
-        // Megnézzük, van-e már kulcsunk (ugyanazt a változót használjuk, amit az ActivationActivity)
         var uuid = prefs.getString("my_beacon_uuid", null)
         if (uuid == null) {
-            // Ha nincs, csinálunk egy újat
             uuid = java.util.UUID.randomUUID().toString().replace("-", "").lowercase()
             prefs.edit().putString("my_beacon_uuid", uuid).apply()
-            Log.d(TAG, "Új BLE kulcs generálva: $uuid")
         }
         return uuid
     }
@@ -431,14 +401,8 @@ class MainViewModel : ViewModel() {
         val ctx = appContext ?: return
         val uid = FirebaseClient.auth.currentUser?.uid ?: return
         val myBleKey = getOrGenerateBleUuid(ctx)
-
-        // Végigmegyünk az összes záron, amihez a felhasználónak joga van, és beírjuk a kulcsot
         myLocks.forEach { lock ->
-            FirebaseClient.getReference("locks/${lock.id}/authorizedBeacons/$uid")
-                .setValue(myBleKey)
-                .addOnSuccessListener {
-                    Log.d(TAG, "Sikeres kulcs szinkronizáció a zárhoz: ${lock.id}")
-                }
+            FirebaseClient.getReference("locks/${lock.id}/authorizedBeacons/$uid").setValue(myBleKey)
         }
     }
 }

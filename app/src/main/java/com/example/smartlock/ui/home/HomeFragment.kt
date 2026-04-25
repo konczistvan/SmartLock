@@ -24,11 +24,12 @@ class HomeFragment : Fragment() {
 
     private val viewModel: MainViewModel by activityViewModels()
 
+    // Engedélykérő ablak eredményeinek kezelése
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         if (!permissions.entries.all { it.value }) {
-            Toast.makeText(requireContext(), "Permissions required!", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), "A megfelelő működéshez minden engedély szükséges!", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -45,15 +46,22 @@ class HomeFragment : Fragment() {
         val btnOpen: Button = view.findViewById(R.id.btnOpen)
         val btnClose: Button = view.findViewById(R.id.btnClose)
         val btnManage: Button = view.findViewById(R.id.btnManageAccess)
-        val switchBle: SwitchMaterial = view.findViewById(R.id.switchAutoUnlock)
-        val switchGeo: SwitchMaterial = view.findViewById(R.id.switchGeofence)
+
+        // Ezt az egy kapcsolót használjuk a teljes Hibrid (BLE + GPS) mód vezérlésére
+        val switchHybrid: SwitchMaterial = view.findViewById(R.id.switchAutoUnlock)
         val layoutGeo: View = view.findViewById(R.id.layoutGeoStatus)
         val tvGeoStatus: TextView = view.findViewById(R.id.tvGeofenceStatus)
         val btnSetLocation: Button = view.findViewById(R.id.btnSetLockLocation)
         val btnLogout: View = view.findViewById(R.id.btnLogout)
 
+        // Ha az XML-ben benne maradt a régi Geofence kapcsoló, szoftveresen eltüntetjük, hogy ne zavarjon be
+        val switchGeo: SwitchMaterial? = view.findViewById(R.id.switchGeofence)
+        switchGeo?.visibility = View.GONE
+        (switchGeo?.parent as? View)?.visibility = View.GONE
+
         tvEmail.text = FirebaseClient.currentUserEmail
 
+        // --- ALAP UI FIGYELŐK ---
         viewModel.statusText.observe(viewLifecycleOwner) { tvStatus.text = it }
 
         viewModel.lockStatus.observe(viewLifecycleOwner) { status ->
@@ -63,13 +71,14 @@ class HomeFragment : Fragment() {
 
         viewModel.myLocksLive.observe(viewLifecycleOwner) { locks ->
             if (locks.isEmpty()) {
-                tvStatus.text = "No locks found. Add one with the + button."
+                tvStatus.text = "Nincs zár. Adj hozzá a + gombbal."
                 return@observe
             }
             val names = locks.map { it.name.ifEmpty { it.id } }
             spinnerLocks.adapter = ArrayAdapter(
                 requireContext(), android.R.layout.simple_spinner_item, names
             ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+
             spinnerLocks.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
                     viewModel.selectLock(locks[pos].id)
@@ -82,6 +91,7 @@ class HomeFragment : Fragment() {
             btnManage.visibility = if (role == "owner") View.VISIBLE else View.GONE
         }
 
+        // --- GOMBOK ---
         btnOpen.setOnClickListener { viewModel.sendCommand("OPEN") }
         btnClose.setOnClickListener { viewModel.sendCommand("CLOSE") }
 
@@ -91,53 +101,56 @@ class HomeFragment : Fragment() {
             })
         }
 
-        // Save current GPS as lock location
         btnSetLocation.setOnClickListener {
             if (hasLocationPermission()) {
                 viewModel.saveCurrentLocationAsLock(requireContext())
             } else {
-                requestLocationPermissions()
+                requestAllPermissions()
             }
         }
 
-        switchGeo.setOnCheckedChangeListener { _, checked ->
+        // --- UI FRISSÍTÉS A SZENZORFÚZIÓ (VALÓDI ÁLLAPOT) ALAPJÁN ---
+        viewModel.unifiedStateText.observe(viewLifecycleOwner) { unifiedText ->
+            // Fentre, az email cím alá kiírjuk a gyönyörű, pontos állapotot
+            val email = FirebaseClient.auth.currentUser?.email ?: ""
+            tvEmail.text = "$email\n$unifiedText"
+
+            // Lentre a GPS kártyára is rátesszük
+            val currentDist = viewModel.geofenceStatusText.value ?: "GPS: -"
+            tvGeoStatus.text = "$unifiedText\n$currentDist"
+        }
+
+        viewModel.geofenceStatusText.observe(viewLifecycleOwner) { distanceText ->
+            // Ha csak a méterek változnak, frissítjük a lenti kártyát
+            val unifiedText = viewModel.unifiedStateText.value ?: ""
+            tvGeoStatus.text = "$unifiedText\n$distanceText"
+        }
+
+        // Toast üzenetek megjelenítése a ViewModelből
+        viewModel.toastMessage.observe(viewLifecycleOwner) { msg ->
+            if (!msg.isNullOrEmpty()) {
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                viewModel.onToastShown()
+            }
+        }
+
+        // --- HIBRID MÓD KAPCSOLÓ (GPS + BLE) ---
+        switchHybrid.setOnCheckedChangeListener { _, checked ->
             layoutGeo.visibility = if (checked) View.VISIBLE else View.GONE
-            viewModel.isGeofenceEnabled = checked
+
             if (checked) {
-                if (hasLocationPermission()) {
+                if (hasBluetoothPermissions() && hasLocationPermission()) {
+                    viewModel.setHybridMode(true)
                     viewModel.fetchLockLocation()
                     viewModel.startLocationUpdates(requireContext())
+                    Toast.makeText(requireContext(), "Hibrid Auto-Unlock Élesítve!", Toast.LENGTH_SHORT).show()
                 } else {
-                    requestLocationPermissions()
-                    switchGeo.isChecked = false
+                    requestAllPermissions()
+                    switchHybrid.isChecked = false
                 }
             } else {
+                viewModel.setHybridMode(false)
                 viewModel.stopLocationUpdates()
-            }
-        }
-
-        viewModel.geofenceStatus.observe(viewLifecycleOwner) { tvGeoStatus.text = it }
-
-        switchBle.setOnCheckedChangeListener { _, checked ->
-            if (checked) {
-                if (hasBluetoothPermissions()) {
-                    viewModel.setAutoUnlockEnabled(true)
-                    val lockId = viewModel.currentLockId
-                    if (lockId.isNotEmpty()) {
-                        FirebaseClient.getReference("locks/$lockId/bleProximityEnabled")
-                            .setValue(true)
-                    }
-                } else {
-                    requestBluetoothPermissions()
-                    switchBle.isChecked = false
-                }
-            } else {
-                viewModel.setAutoUnlockEnabled(false)
-                val lockId = viewModel.currentLockId
-                if (lockId.isNotEmpty()) {
-                    FirebaseClient.getReference("locks/$lockId/bleProximityEnabled")
-                        .setValue(false)
-                }
             }
         }
 
@@ -149,48 +162,37 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // --- JOGOSULTSÁG KEZELÉS ---
     private fun hasLocationPermission() =
-        ActivityCompat.checkSelfPermission(requireContext(),
-            Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
     private fun hasBluetoothPermissions(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ActivityCompat.checkSelfPermission(requireContext(),
-                Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(requireContext(),
-                        Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(requireContext(),
-                        Manifest.permission.BLUETOOTH_ADVERTISE) == PackageManager.PERMISSION_GRANTED
+            ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_ADVERTISE) == PackageManager.PERMISSION_GRANTED
         } else {
-            ActivityCompat.checkSelfPermission(requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_ADMIN) == PackageManager.PERMISSION_GRANTED
         }
     }
 
-    private fun requestLocationPermissions() {
+    private fun requestAllPermissions() {
         val perms = mutableListOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION
         )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             perms.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-        requestPermissionLauncher.launch(perms.toTypedArray())
-    }
-
-    private fun requestBluetoothPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            requestPermissionLauncher.launch(arrayOf(
-                Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_ADVERTISE,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ))
-        } else {
-            requestPermissionLauncher.launch(arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.BLUETOOTH,
-                Manifest.permission.BLUETOOTH_ADMIN
-            ))
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            perms.add(Manifest.permission.BLUETOOTH_SCAN)
+            perms.add(Manifest.permission.BLUETOOTH_CONNECT)
+            perms.add(Manifest.permission.BLUETOOTH_ADVERTISE)
+        } else {
+            perms.add(Manifest.permission.BLUETOOTH)
+            perms.add(Manifest.permission.BLUETOOTH_ADMIN)
+        }
+        requestPermissionLauncher.launch(perms.toTypedArray())
     }
 }
