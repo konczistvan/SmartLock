@@ -14,10 +14,17 @@ import com.example.smartlock.R
 import com.example.smartlock.api.FirebaseClient
 import com.example.smartlock.ui.login.LoginActivity
 import com.example.smartlock.ui.main.MainViewModel
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 
 class SettingsFragment : Fragment() {
 
     private val viewModel: MainViewModel by activityViewModels()
+
+    // ÚJ: Listener a valós idejű debughoz
+    private var debugListener: ValueEventListener? = null
+    private var lockId: String = ""
 
     override fun onCreateView(inflater: LayoutInflater, c: ViewGroup?, s: Bundle?): View =
         inflater.inflate(R.layout.fragment_settings, c, false)
@@ -32,12 +39,28 @@ class SettingsFragment : Fragment() {
         view.findViewById<TextView>(R.id.tvUserEmail).text =
             FirebaseClient.auth.currentUser?.email ?: ""
 
-        val lockId = viewModel.currentLockId
+        lockId = viewModel.currentLockId
         if (lockId.isEmpty()) {
             Toast.makeText(requireContext(), "Please select a lock on the Home screen first!", Toast.LENGTH_LONG).show()
             // Opcionális: Ha nincs zár, el is rejthetjük a csúszkákat, de a visszatérés (return) most megvédi a kódot a fagyástól.
             return
         }
+
+        // --- ÚJ: LIVE DEBUG FIGYELŐ BEKÖTÉSE ---
+        val tvLiveDebug = view.findViewById<TextView>(R.id.tvLiveDebug)
+        val debugRef = FirebaseClient.getReference("locks/$lockId/telemetry/live_debug")
+
+        debugListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val debugText = snapshot.getValue(String::class.java) ?: "Nincs adat"
+                if (isAdded) { // Biztonsági ellenőrzés, hogy a fragment még él-e
+                    tvLiveDebug.text = debugText
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        debugRef.addValueEventListener(debugListener!!)
+        // ----------------------------------------
 
         // ---- BLE RSSI ----
         val tvBle = view.findViewById<TextView>(R.id.tvBleValue)
@@ -109,6 +132,16 @@ class SettingsFragment : Fragment() {
             startActivity(Intent(requireContext(), LoginActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             })
+        }
+    }
+
+    // ÚJ: Le kell iratkozni a Firebase figyelőről, ha elhagyjuk a Settings oldalt!
+    override fun onDestroyView() {
+        super.onDestroyView()
+        debugListener?.let { listener ->
+            if (lockId.isNotEmpty()) {
+                FirebaseClient.getReference("locks/$lockId/telemetry/live_debug").removeEventListener(listener)
+            }
         }
     }
 }

@@ -128,10 +128,18 @@ class MainViewModel : ViewModel() {
                 _myLocksLive.postValue(locks)
 
                 if (myLocks.isNotEmpty()) {
-                    currentLockId = myLocks[0].id
+                    // JAVÍTÁS: Csak akkor állítjuk az elsőre, ha még nincs kiválasztva semmi,
+                    // vagy ha a korábban kiválasztott zár már nincs a listában (pl. törölték)
+                    val lockExists = myLocks.any { it.id == currentLockId }
+                    if (currentLockId.isEmpty() || !lockExists) {
+                        currentLockId = myLocks[0].id
+                    }
+
                     myRoleForCurrentLock = lockIdRolePairs.firstOrNull { it.first == currentLockId }?.second ?: "guest"
                     _currentLockRole.postValue(myRoleForCurrentLock)
+
                     listenToCurrentLockStatus()
+                    if (isHybridModeEnabled) fetchLockLocation()
                 }
 
                 _locksLoaded.postValue(true)
@@ -272,7 +280,13 @@ class MainViewModel : ViewModel() {
     // --- HIBRID VEZÉRLÉS (Bluetooth KI/BE) ---
     fun setHybridMode(enabled: Boolean) {
         isHybridModeEnabled = enabled
-        if (!enabled) {
+        if (enabled) {
+            // ÚJ JAVÍTÁS: Azonnal indítjuk a BLE sugárzást a kapcsoló felkapcsolásakor,
+            // nem várjuk meg a GPS koordinátákat!
+            startBleAdvertising()
+            _userState.postValue(UserState.APPROACHING)
+            updateUnifiedState(macroParam = UserState.APPROACHING)
+        } else {
             _userState.postValue(UserState.HOME)
             updateUnifiedState(macroParam = UserState.HOME)
             stopBleAdvertising()
@@ -338,23 +352,23 @@ class MainViewModel : ViewModel() {
                 if (isHybridModeEnabled) {
                     val currentState = _userState.value ?: UserState.HOME
 
-                    // Ha elhagytuk a zónát (több mint 50m) -> ALTATÁS
+                    // Ha elhagytuk a zónát (több mint 50m)
                     if (distanceMeters > geofenceRadiusMeters) {
                         if (currentState != UserState.AWAY) {
                             _userState.postValue(UserState.AWAY)
-                            updateUnifiedState(macroParam = UserState.AWAY) // JAVÍTVA
-                            stopBleAdvertising()
+                            updateUnifiedState(macroParam = UserState.AWAY)
+                            // TESZT MIATT KIKOMMENTELVE: stopBleAdvertising()
                         }
                     }
-                    // Ha a zónán belül vagyunk (kevesebb mint 50m) -> ÉBRENLÉT
+                    // Ha a zónán belül vagyunk (kevesebb mint 50m)
                     else {
                         if (currentState == UserState.AWAY) {
                             _userState.postValue(UserState.APPROACHING)
-                            updateUnifiedState(macroParam = UserState.APPROACHING) // JAVÍTVA
+                            updateUnifiedState(macroParam = UserState.APPROACHING)
                             startBleAdvertising()
                         } else if (currentState == UserState.APPROACHING && distanceMeters < 15f) {
                             _userState.postValue(UserState.HOME)
-                            updateUnifiedState(macroParam = UserState.HOME) // JAVÍTVA
+                            updateUnifiedState(macroParam = UserState.HOME)
                         } else if (currentState == UserState.HOME && !isAdvertising) {
                             startBleAdvertising()
                         }

@@ -169,7 +169,34 @@
             </LinearLayout>
 
         </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="14dp">
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="LIVE BLE TELEMETRY"
+                style="@style/TextAppearance.SectionLabel"
+                android:textColor="@color/primary"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/tvLiveDebug"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Várakozás az adatokra..."
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:fontFamily="monospace"
+                android:background="#EEF0FF"
+                android:padding="10dp"/>
+        </LinearLayout>
         <!-- ── GEOFENCE ── -->
         <LinearLayout
             android:layout_width="match_parent"

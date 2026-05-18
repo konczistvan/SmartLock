@@ -75,10 +75,21 @@ class HomeFragment : Fragment() {
                 return@observe
             }
             val names = locks.map { it.name.ifEmpty { it.id } }
+
+            // JAVÍTÁS: Levesszük a listenert az Adapter beállítása előtt, hogy ne ugorjon vissza az első elemre
+            spinnerLocks.onItemSelectedListener = null
+
             spinnerLocks.adapter = ArrayAdapter(
                 requireContext(), android.R.layout.simple_spinner_item, names
             ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
 
+            // JAVÍTÁS: Megkeressük, hányadik a listában a jelenleg kiválasztott zár, és oda tekerjük a Spinnert
+            val selectedIndex = locks.indexOfFirst { it.id == viewModel.currentLockId }
+            if (selectedIndex >= 0) {
+                spinnerLocks.setSelection(selectedIndex, false) // A 'false' kikapcsolja a felesleges animációt
+            }
+
+            // Visszatesszük a listenert
             spinnerLocks.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
                     viewModel.selectLock(locks[pos].id)
@@ -135,6 +146,11 @@ class HomeFragment : Fragment() {
         }
 
         // --- HIBRID MÓD KAPCSOLÓ (GPS + BLE) ---
+        switchHybrid.setOnCheckedChangeListener(null) // Biztos, ami biztos, levesszük a figyelőt
+        switchHybrid.isChecked = viewModel.isHybridModeEnabled
+        layoutGeo.visibility = if (viewModel.isHybridModeEnabled) View.VISIBLE else View.GONE
+
+        // 2. Csak ezután kötjük be az eseményfigyelőt
         switchHybrid.setOnCheckedChangeListener { _, checked ->
             layoutGeo.visibility = if (checked) View.VISIBLE else View.GONE
 
@@ -143,7 +159,7 @@ class HomeFragment : Fragment() {
                     viewModel.setHybridMode(true)
                     viewModel.fetchLockLocation()
                     viewModel.startLocationUpdates(requireContext())
-                    Toast.makeText(requireContext(), "Hibrid Auto-Unlock Élesítve!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "BLE Auto-Unlock Élesítve!", Toast.LENGTH_SHORT).show()
                 } else {
                     requestAllPermissions()
                     switchHybrid.isChecked = false
