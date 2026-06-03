@@ -145,29 +145,4 @@ class LockRepository {
                 }
         }
     }
-
-    fun addLock(
-        lockId: String,
-        lockName: String,
-        macAddress: String,
-        addedByUid: String,
-        latitude: Double,
-        longitude: Double,
-        onSuccess: () -> Unit,
-        onFailure: (String) -> Unit
-    ) {
-        val lockData = mapOf(
-            "name" to lockName,
-            "macAddress" to macAddress,
-            "status" to "LOCKED",
-            "command" to "NONE",
-            "owner" to addedByUid,
-            "location" to mapOf("lat" to latitude, "lng" to longitude)
-        )
-
-        FirebaseClient.getReference("locks/$lockId")
-            .setValue(lockData)
-            .addOnSuccessListener { onSuccess() }
-            .addOnFailureListener { onFailure(it.message ?: "Unknown error") }
-    }
 }

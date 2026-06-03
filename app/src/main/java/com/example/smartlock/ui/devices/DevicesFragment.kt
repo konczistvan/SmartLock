@@ -13,21 +13,12 @@ import androidx.fragment.app.activityViewModels
 import com.example.smartlock.R
 import com.example.smartlock.api.FirebaseClient
 import com.example.smartlock.ui.activation.ActivationActivity
-import com.example.smartlock.ui.addlock.AddLockActivity
 import com.example.smartlock.ui.main.MainViewModel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class DevicesFragment : Fragment() {
 
     private val viewModel: MainViewModel by activityViewModels()
-
-    private val addLockLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            viewModel.reloadLocks()
-        }
-    }
 
     private val activationLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -77,21 +68,11 @@ class DevicesFragment : Fragment() {
             }
         }
 
+        // The FAB now directly starts BLE activation (manual add removed)
         fabAdd.setOnClickListener {
-            val options = arrayOf("🔗 Activate New Lock (BLE)", "✏️ Add Lock Manually")
-            AlertDialog.Builder(requireContext())
-                .setTitle("Add Lock")
-                .setItems(options) { _, which ->
-                    when (which) {
-                        0 -> activationLauncher.launch(
-                            Intent(requireContext(), ActivationActivity::class.java)
-                        )
-                        1 -> addLockLauncher.launch(
-                            Intent(requireContext(), AddLockActivity::class.java)
-                        )
-                    }
-                }
-                .show()
+            activationLauncher.launch(
+                Intent(requireContext(), ActivationActivity::class.java)
+            )
         }
     }
 

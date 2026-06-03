@@ -37,19 +37,9 @@
     <string name="activate_hint">Lock name (e.g. Front Door, Garage)</string>
     <string name="btn_start_activation">Start Activation</string>
 
-    <string name="add_lock_title">Add New Lock</string>
-    <string name="add_lock_subtitle">Connect your ESP32 device</string>
-    <string name="add_lock_info">Lock ID = LOCK_ID from your ESP32 code\nBLE MAC = printed in Serial Monitor on boot</string>
-    <string name="lock_name_label">LOCK NAME</string>
+    <!-- These two are still referenced by item_lock_card.xml -->
     <string name="lock_name_hint">e.g. Front Door</string>
-    <string name="lock_id_label">LOCK ID (from ESP32 code)</string>
     <string name="lock_id_hint">LOCK_0CDC7E614160</string>
-    <string name="mac_label">BLE MAC ADDRESS (optional)</string>
-    <string name="mac_hint">0CDC7E614162</string>
-    <string name="lat_label">LATITUDE</string>
-    <string name="lng_label">LONGITUDE</string>
-    <string name="geo_hint">GPS coordinates of the lock (for geofencing)</string>
-    <string name="btn_add_lock">Add Lock</string>
 
     <string name="manage_title">Manage Access</string>
     <string name="manage_subtitle">Who can access this lock</string>
@@ -89,19 +79,13 @@
     <string name="settings_ble_placeholder">-80 dBm</string>
 
     <string name="settings_telemetry_title">LIVE BLE TELEMETRY</string>
-    <string name="settings_telemetry_waiting">Várakozás az adatokra...</string>
+    <string name="settings_telemetry_waiting">Waiting for data...</string>
 
     <string name="settings_geo_radius">Geofence Radius</string>
     <string name="settings_geo_desc">Distance to trigger automatic unlock</string>
     <string name="settings_geo_min">3 m</string>
     <string name="settings_geo_max">500 m</string>
     <string name="settings_geo_placeholder">50 m</string>
-
-    <string name="settings_deadzone_radius">Deadzone Radius</string>
-    <string name="settings_deadzone_desc">Inside this range = already home (won\'t unlock)</string>
-    <string name="settings_deadzone_min">1 m</string>
-    <string name="settings_deadzone_max">50 m</string>
-    <string name="settings_deadzone_placeholder">10 m</string>
 
     <string name="settings_section_about">ABOUT</string>
     <string name="settings_danger_zone">Danger Zone</string>

@@ -42,7 +42,6 @@
         <activity android:name=".ui.login.LoginActivity"/>
         <activity android:name=".ui.register.RegisterActivity"/>
         <activity android:name=".ui.main.MainActivity"/>
-        <activity android:name=".ui.addlock.AddLockActivity"/>
         <activity android:name=".ui.manageaccess.ManageAccessActivity"/>
         <activity android:name=".ui.activation.ActivationActivity"/>
 

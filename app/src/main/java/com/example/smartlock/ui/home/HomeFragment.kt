@@ -28,7 +28,7 @@ class HomeFragment : Fragment() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         if (!permissions.entries.all { it.value }) {
-            Toast.makeText(requireContext(), "A megfelelő működéshez minden engedély szükséges!", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), "All permissions are required for the app to work properly!", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -50,12 +50,12 @@ class HomeFragment : Fragment() {
         val btnSetLocation: Button = view.findViewById(R.id.btnSetLockLocation)
         val btnLogout: View = view.findViewById(R.id.btnLogout)
         val layoutLockSelector: View = view.findViewById(R.id.layoutLockSelector)
+        // The separate geofence switch is not used — the Auto-Unlock switch is the master gate.
         val switchGeo: SwitchMaterial? = view.findViewById(R.id.switchGeofence)
         switchGeo?.visibility = View.GONE
         (switchGeo?.parent as? View)?.visibility = View.GONE
 
         tvEmail.text = FirebaseClient.currentUserEmail
-
 
         viewModel.statusText.observe(viewLifecycleOwner) { tvStatus.text = it }
 
@@ -66,7 +66,7 @@ class HomeFragment : Fragment() {
 
         viewModel.myLocksLive.observe(viewLifecycleOwner) { locks ->
             if (locks.isEmpty()) {
-                tvStatus.text = "Nincs zár. Adj hozzá a + gombbal."
+                tvStatus.text = "No locks. Add one with the + button."
                 layoutLockSelector.setOnClickListener(null)
                 return@observe
             }
@@ -79,7 +79,6 @@ class HomeFragment : Fragment() {
         viewModel.currentLockRole.observe(viewLifecycleOwner) { role ->
             btnManage.visibility = if (role == "owner") View.VISIBLE else View.GONE
         }
-
 
         btnOpen.setOnClickListener { viewModel.sendCommand("OPEN") }
         btnClose.setOnClickListener { viewModel.sendCommand("CLOSE") }
@@ -98,22 +97,10 @@ class HomeFragment : Fragment() {
             }
         }
 
-        viewModel.unifiedStateText.observe(viewLifecycleOwner) { unifiedText ->
-
-            val email = FirebaseClient.auth.currentUser?.email ?: ""
-            tvEmail.text = "$email\n$unifiedText"
-
-
-            val currentDist = viewModel.geofenceStatusText.value ?: "GPS: -"
-            tvGeoStatus.text = "$unifiedText\n$currentDist"
+        // The geofence card (visible only when hybrid is on) shows the unified system-state line.
+        viewModel.unifiedStateText.observe(viewLifecycleOwner) { stateText ->
+            tvGeoStatus.text = stateText
         }
-
-        viewModel.geofenceStatusText.observe(viewLifecycleOwner) { distanceText ->
-
-            val unifiedText = viewModel.unifiedStateText.value ?: ""
-            tvGeoStatus.text = "$unifiedText\n$distanceText"
-        }
-
 
         viewModel.toastMessage.observe(viewLifecycleOwner) { msg ->
             if (!msg.isNullOrEmpty()) {
@@ -122,11 +109,9 @@ class HomeFragment : Fragment() {
             }
         }
 
-
-        switchHybrid.setOnCheckedChangeListener(null) // Biztos, ami biztos, levesszük a figyelőt
+        switchHybrid.setOnCheckedChangeListener(null) // Remove the listener first, just to be safe
         switchHybrid.isChecked = viewModel.isHybridModeEnabled
         layoutGeo.visibility = if (viewModel.isHybridModeEnabled) View.VISIBLE else View.GONE
-
 
         switchHybrid.setOnCheckedChangeListener { _, checked ->
             layoutGeo.visibility = if (checked) View.VISIBLE else View.GONE
@@ -136,7 +121,7 @@ class HomeFragment : Fragment() {
                     viewModel.setHybridMode(true)
                     viewModel.fetchLockLocation()
                     viewModel.startLocationUpdates(requireContext())
-                    Toast.makeText(requireContext(), "BLE Auto-Unlock Élesítve!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Auto-Unlock enabled — it activates when you're near home", Toast.LENGTH_SHORT).show()
                 } else {
                     requestAllPermissions()
                     switchHybrid.isChecked = false

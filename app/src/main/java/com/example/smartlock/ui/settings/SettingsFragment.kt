@@ -49,7 +49,7 @@ class SettingsFragment : Fragment() {
 
         debugListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val debugText = snapshot.getValue(String::class.java) ?: "Nincs adat"
+                val debugText = snapshot.getValue(String::class.java) ?: "No data"
                 if (isAdded) {
                     tvLiveDebug.text = debugText
                 }
@@ -97,27 +97,6 @@ class SettingsFragment : Fragment() {
                 if (fromUser) {
                     prefs.edit().putInt("geo_radius_$lockId", radius).apply()
                     viewModel.setGeofenceRadius(radius.toFloat())
-                }
-            }
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        })
-
-
-        val tvDead = view.findViewById<TextView>(R.id.tvDeadzoneValue)
-        val seekDead = view.findViewById<SeekBar>(R.id.seekBarDeadzone)
-
-        val savedDead = prefs.getInt("geo_deadzone_$lockId", 10)
-        seekDead.progress = (savedDead - 1).coerceIn(0, 49)
-        tvDead.text = "$savedDead m"
-
-        seekDead.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, p: Int, fromUser: Boolean) {
-                val radius = p + 1
-                tvDead.text = "$radius m"
-                if (fromUser) {
-                    prefs.edit().putInt("geo_deadzone_$lockId", radius).apply()
-                    viewModel.setDeadzoneRadius(radius.toFloat())
                 }
             }
             override fun onStartTrackingTouch(sb: SeekBar?) {}

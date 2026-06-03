@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.location.Location
 import android.os.Looper
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -20,6 +21,9 @@ import com.google.android.gms.location.*
 class MainViewModel : ViewModel() {
 
     private val TAG = "MainViewModel"
+
+    // How long the phone must be CONFIDENTLY outside the exit radius before BLE is paused.
+    private val AWAY_GRACE_MS = 60_000L
 
     private val lockRepository = LockRepository()
     private val logRepository = LogRepository()
@@ -38,21 +42,16 @@ class MainViewModel : ViewModel() {
 
     private var myRoleForCurrentLock: String = "guest"
 
-    // --- ÁLLAPOTGÉP (Makro) ---
-    enum class UserState { HOME, AWAY, APPROACHING }
-    private val _userState = MutableLiveData(UserState.HOME)
-    val userState: LiveData<UserState> = _userState
-
     var isHybridModeEnabled = false
         private set
 
-    // --- SZENZORFÚZIÓ (Mikro + Makro) ---
-    private val _microState = MutableLiveData("UNKNOWN")
-    private var microStateListener: com.google.firebase.database.ValueEventListener? = null
-
-    private val _unifiedStateText = MutableLiveData<String>("🏠 Betöltés...")
-    val unifiedStateText: LiveData<String> = _unifiedStateText
-    // -----------------------------------
+    // --- TWO-TIER STATE ---
+    // BLE is primary. GPS is only an energy-saving hint that PAUSES BLE when we're
+    // confidently far away. Default is "armed" so it works immediately at the door.
+    private var insideRadius = false
+    private var lastDistanceMeters: Float? = null
+    private var lastFixTrustworthy = false
+    private var awayCandidateSince = 0L
 
     private val _locksLoaded = MutableLiveData(false)
     val locksLoaded: LiveData<Boolean> = _locksLoaded
@@ -60,8 +59,8 @@ class MainViewModel : ViewModel() {
     private val _statusText = MutableLiveData("Loading...")
     val statusText: LiveData<String> = _statusText
 
-    private val _geofenceStatusText = MutableLiveData("GPS: –")
-    val geofenceStatusText: LiveData<String> = _geofenceStatusText
+    private val _unifiedStateText = MutableLiveData("🔒 Locked")
+    val unifiedStateText: LiveData<String> = _unifiedStateText
 
     private val _toastMessage = MutableLiveData<String?>()
     val toastMessage: LiveData<String?> = _toastMessage
@@ -79,8 +78,6 @@ class MainViewModel : ViewModel() {
 
     var geofenceRadiusMeters = 50f
         private set
-    var deadzoneRadiusMeters = 10f
-        private set
     private var lockLocation: Location? = null
 
     private var fusedLocationClient: FusedLocationProviderClient? = null
@@ -97,13 +94,12 @@ class MainViewModel : ViewModel() {
         appContext = context.applicationContext
         bluetoothAdapter = btAdapter
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-
         setupLocationCallback()
     }
 
     fun loginAndLoadLocks() {
         val uid = FirebaseClient.auth.currentUser?.uid ?: return
-        _statusText.value = "Zárak betöltése..."
+        _statusText.value = "Loading locks..."
         loadMyLocks()
     }
 
@@ -112,7 +108,7 @@ class MainViewModel : ViewModel() {
         permissionRepository.getMyLockIds(uid) { lockIdRolePairs ->
             if (lockIdRolePairs.isEmpty()) {
                 myLocks = emptyList()
-                _statusText.postValue("Nincs zár. Adj hozzá a + gombbal.")
+                _statusText.postValue("No locks. Add one with the + button.")
                 _locksLoaded.postValue(true)
                 _myLocksLive.postValue(emptyList())
                 return@getMyLockIds
@@ -124,8 +120,6 @@ class MainViewModel : ViewModel() {
                 _myLocksLive.postValue(locks)
 
                 if (myLocks.isNotEmpty()) {
-                    // JAVÍTÁS: Csak akkor állítjuk az elsőre, ha még nincs kiválasztva semmi,
-                    // vagy ha a korábban kiválasztott zár már nincs a listában (pl. törölték)
                     val lockExists = myLocks.any { it.id == currentLockId }
                     if (currentLockId.isEmpty() || !lockExists) {
                         currentLockId = myLocks[0].id
@@ -172,15 +166,25 @@ class MainViewModel : ViewModel() {
 
     fun selectLock(lockId: String) {
         if (lockId == currentLockId) return
+
+        // Pause proximity on the OLD lock before switching
+        if (isHybridModeEnabled) setProximityFlag(false)
+
         currentLockId = lockId
         pendingManualOpen = false
+
+        // Reset per-lock geofence state
+        lockLocation = null
+        lastDistanceMeters = null
+        lastFixTrustworthy = false
+        awayCandidateSince = 0L
+        insideRadius = isHybridModeEnabled // default armed if hybrid is on
 
         val newLockName = myLocks.find { it.id == lockId }?.name ?: lockId
         _statusText.postValue("[$newLockName]\nLoading...")
 
         val prefs = appContext?.getSharedPreferences("smartlock_prefs", Context.MODE_PRIVATE)
         geofenceRadiusMeters = prefs?.getInt("geo_radius_$lockId", 50)?.toFloat() ?: 50f
-        deadzoneRadiusMeters = prefs?.getInt("geo_deadzone_$lockId", 10)?.toFloat() ?: 10f
         bleRssiThreshold = prefs?.getInt("ble_rssi_$lockId", -80) ?: -80
 
         val uid = FirebaseClient.auth.currentUser?.uid ?: ""
@@ -190,7 +194,11 @@ class MainViewModel : ViewModel() {
         }
 
         listenToCurrentLockStatus()
-        if (isHybridModeEnabled) fetchLockLocation()
+        if (isHybridModeEnabled) {
+            startBleAdvertising() // arm the NEW lock
+            fetchLockLocation()
+        }
+        refreshUnifiedState()
     }
 
     fun listenToCurrentLockStatus() {
@@ -204,12 +212,6 @@ class MainViewModel : ViewModel() {
                 _statusText.postValue("[$displayName]\n${mapStatus(lockModel.status)}")
 
                 if (lockModel.status == "UNLOCKED" && lastLoggedStatus != "UNLOCKED") {
-
-                    if (isHybridModeEnabled) {
-                        _userState.postValue(UserState.HOME)
-                        updateUnifiedState(macroParam = UserState.HOME)
-                    }
-
                     if (pendingManualOpen) {
                         logRepository.logAccess(currentLockId, "MANUAL")
                         pendingManualOpen = false
@@ -220,22 +222,9 @@ class MainViewModel : ViewModel() {
 
                 if (lockModel.status == "LOCKED") pendingManualOpen = false
                 lastLoggedStatus = lockModel.status
+                refreshUnifiedState()
             }
         )
-
-        // --- ESP32 MIKRO-ÁLLAPOT FIGYELÉSE ---
-        microStateListener?.let { FirebaseClient.getReference("locks/$currentLockId/microState").removeEventListener(it) }
-
-        microStateListener = object : com.google.firebase.database.ValueEventListener {
-            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
-                val newMicro = snapshot.getValue(String::class.java) ?: "UNKNOWN"
-                _microState.postValue(newMicro)
-                // JAVÍTVA: Explicit paraméter átadása, hogy ne a régi _microState.value-t olvassa
-                updateUnifiedState(microParam = newMicro)
-            }
-            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
-        }
-        FirebaseClient.getReference("locks/$currentLockId/microState").addValueEventListener(microStateListener!!)
     }
 
     private fun checkAndLogEspUnlock() {
@@ -256,70 +245,80 @@ class MainViewModel : ViewModel() {
         else -> status
     }
 
-    // --- SZENZORFÚZIÓ MATEK (JAVÍTVA) ---
-    private fun updateUnifiedState(macroParam: UserState? = null, microParam: String? = null) {
-        // Ha explicit átadjuk, azt használja, különben a LiveData (esetleg régi) értékét
-        val macro = macroParam ?: _userState.value ?: UserState.HOME
-        val micro = microParam ?: _microState.value ?: "UNKNOWN"
+    // --- UNIFIED STATE TEXT (English, computed purely on the phone) ---
+    private fun refreshUnifiedState() {
+        val status = _lockStatus.value ?: "LOCKED"
 
-        val text = when {
-            macro == UserState.AWAY -> "🚶 TÁVOL (Házon kívül)"
-            macro == UserState.APPROACHING && micro == "AWAY" -> "🎯 KÖZELEDÉS (Zónában, várjuk a BLE jelet)"
-            macro == UserState.APPROACHING && micro == "OUTSIDE" -> "🚪 AJTÓ ELŐTT (Nyitás folyamatban...)"
-            macro == UserState.HOME && micro == "INSIDE" -> "🛋️ BENT A HÁZBAN (Zárva, Biztonságban)"
-            macro == UserState.HOME && micro == "OUTSIDE" -> "🌳 KINT AZ UDVARON (Szemétkivitel)"
-            macro == UserState.HOME && micro == "AWAY" -> "🏠 OTTHON (Alszik a rendszer)"
-            else -> "🏠 OTTHON (Készenlét)"
+        val text = if (!isHybridModeEnabled) {
+            mapStatus(status)
+        } else if (!insideRadius) {
+            "🚶 Away — auto-unlock paused"
+        } else if (status == "UNLOCKED") {
+            "🔓 Unlocked — welcome home"
+        } else {
+            val d = lastDistanceMeters?.toInt()
+            if (lastFixTrustworthy && d != null) "🎯 Armed ($d m) — approach to unlock"
+            else "🎯 Armed — approach to unlock"
         }
         _unifiedStateText.postValue(text)
     }
 
-    // --- HIBRID VEZÉRLÉS (Bluetooth KI/BE) ---
+    // --- HYBRID CONTROL ---
+    // Enabling it arms BLE IMMEDIATELY (default = home). GPS only pauses BLE when
+    // we're confidently far away (handled in the location callback).
     fun setHybridMode(enabled: Boolean) {
         isHybridModeEnabled = enabled
+        awayCandidateSince = 0L
         if (enabled) {
-            // ÚJ JAVÍTÁS: Azonnal indítjuk a BLE sugárzást a kapcsoló felkapcsolásakor,
-            // nem várjuk meg a GPS koordinátákat!
+            insideRadius = true
             startBleAdvertising()
-            _userState.postValue(UserState.APPROACHING)
-            updateUnifiedState(macroParam = UserState.APPROACHING)
         } else {
-            _userState.postValue(UserState.HOME)
-            updateUnifiedState(macroParam = UserState.HOME)
+            insideRadius = false
             stopBleAdvertising()
+        }
+        refreshUnifiedState()
+    }
+
+    private fun setProximityFlag(enabled: Boolean) {
+        if (currentLockId.isNotEmpty()) {
+            FirebaseClient.getReference("locks/$currentLockId/bleProximityEnabled").setValue(enabled)
         }
     }
 
     @SuppressLint("MissingPermission")
     private fun startBleAdvertising() {
-        if (isAdvertising) return
         val ctx = appContext ?: return
-        val prefs = ctx.getSharedPreferences("smartlock_prefs", Context.MODE_PRIVATE)
-        val beaconUUID = prefs.getString("my_beacon_uuid", null) ?: return
-
-        BleAdvertiserService.start(ctx, beaconUUID)
-        isAdvertising = true
-        if (currentLockId.isNotEmpty()) {
-            FirebaseClient.getReference("locks/$currentLockId/bleProximityEnabled").setValue(true)
+        if (!isAdvertising) {
+            val prefs = ctx.getSharedPreferences("smartlock_prefs", Context.MODE_PRIVATE)
+            val beaconUUID = prefs.getString("my_beacon_uuid", null) ?: return
+            BleAdvertiserService.start(ctx, beaconUUID)
+            isAdvertising = true
         }
+        setProximityFlag(true) // tell the ESP to start scanning (for the current lock)
     }
 
     private fun stopBleAdvertising() {
-        if (!isAdvertising) return
-        val ctx = appContext ?: return
-        BleAdvertiserService.stop(ctx)
-        isAdvertising = false
-        if (currentLockId.isNotEmpty()) {
-            FirebaseClient.getReference("locks/$currentLockId/bleProximityEnabled").setValue(false)
+        setProximityFlag(false) // tell the ESP to stop scanning
+        if (isAdvertising) {
+            appContext?.let { BleAdvertiserService.stop(it) }
+            isAdvertising = false
         }
     }
 
-    // --- GEOFENCE (Helymeghatározás) ---
+    // --- GEOFENCE (energy-saving hint, never disables BLE on noise) ---
     fun fetchLockLocation() {
         lockRepository.fetchLockLocation(
             lockId = currentLockId,
-            onSuccess = { location -> lockLocation = location },
-            onFailure = { _geofenceStatusText.postValue("⚠ $it") }
+            onSuccess = { location ->
+                lockLocation = location
+                refreshUnifiedState()
+            },
+            onFailure = { err ->
+                Log.w(TAG, "Lock location unavailable: $err")
+                lockLocation = null // no GPS -> stay armed, BLE stays on
+                lastFixTrustworthy = false
+                refreshUnifiedState()
+            }
         )
     }
 
@@ -332,7 +331,8 @@ class MainViewModel : ViewModel() {
                 lockRef.child("lat").setValue(location.latitude)
                 lockRef.child("lng").setValue(location.longitude)
                 lockLocation = location
-                _toastMessage.postValue("Zár helyzete elmentve!")
+                _toastMessage.postValue("Lock location saved!")
+                refreshUnifiedState()
             }
         }
     }
@@ -341,36 +341,45 @@ class MainViewModel : ViewModel() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val myLocation = result.lastLocation ?: return
-                val target = lockLocation ?: return
+                val target = lockLocation ?: return // no lock GPS -> stay armed
+                if (!isHybridModeEnabled) return
 
                 val distanceMeters = myLocation.distanceTo(target)
-                _geofenceStatusText.postValue("Távolság a zártól: ${distanceMeters.toInt()} m")
+                lastDistanceMeters = distanceMeters
 
-                if (isHybridModeEnabled) {
-                    val currentState = _userState.value ?: UserState.HOME
+                val enterR = geofenceRadiusMeters
+                // Exit radius is much larger than enter radius (hysteresis), min radius+60m.
+                val exitR = (geofenceRadiusMeters * 2f).coerceAtLeast(geofenceRadiusMeters + 60f)
+                // A fix is only trusted if its accuracy is better than the exit radius.
+                val acc = if (myLocation.hasAccuracy()) myLocation.accuracy else exitR + 1f
+                lastFixTrustworthy = acc <= exitR
 
-                    // Ha elhagytuk a zónát (több mint 50m)
-                    if (distanceMeters > geofenceRadiusMeters) {
-                        if (currentState != UserState.AWAY) {
-                            _userState.postValue(UserState.AWAY)
-                            updateUnifiedState(macroParam = UserState.AWAY)
-                            // TESZT MIATT KIKOMMENTELVE: stopBleAdvertising()
+                if (lastFixTrustworthy) {
+                    when {
+                        distanceMeters <= enterR -> {
+                            // Clearly inside -> arm
+                            awayCandidateSince = 0L
+                            insideRadius = true
                         }
-                    }
-                    // Ha a zónán belül vagyunk (kevesebb mint 50m)
-                    else {
-                        if (currentState == UserState.AWAY) {
-                            _userState.postValue(UserState.APPROACHING)
-                            updateUnifiedState(macroParam = UserState.APPROACHING)
-                            startBleAdvertising()
-                        } else if (currentState == UserState.APPROACHING && distanceMeters < 15f) {
-                            _userState.postValue(UserState.HOME)
-                            updateUnifiedState(macroParam = UserState.HOME)
-                        } else if (currentState == UserState.HOME && !isAdvertising) {
-                            startBleAdvertising()
+                        distanceMeters > exitR -> {
+                            // Possibly away -> require it to be sustained before pausing BLE
+                            val nowMs = System.currentTimeMillis()
+                            if (awayCandidateSince == 0L) awayCandidateSince = nowMs
+                            else if (nowMs - awayCandidateSince >= AWAY_GRACE_MS) insideRadius = false
+                        }
+                        else -> {
+                            // Hysteresis band -> not clearly away; keep current state
+                            awayCandidateSince = 0L
                         }
                     }
                 }
+                // Untrustworthy fix (typical indoors) -> keep current state (stays armed)
+
+                // Drive BLE only on a real transition (avoids spamming Firebase)
+                if (insideRadius && !isAdvertising) startBleAdvertising()
+                else if (!insideRadius && isAdvertising) stopBleAdvertising()
+
+                refreshUnifiedState()
             }
         }
     }
@@ -388,7 +397,6 @@ class MainViewModel : ViewModel() {
 
     fun setBleRssiThreshold(rssi: Int) { bleRssiThreshold = rssi }
     fun setGeofenceRadius(meters: Float) { geofenceRadiusMeters = meters }
-    fun setDeadzoneRadius(meters: Float) { deadzoneRadiusMeters = meters }
 
     fun onToastShown() { _toastMessage.value = null }
     override fun onCleared() {

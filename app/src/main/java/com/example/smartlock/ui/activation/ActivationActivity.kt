@@ -166,29 +166,29 @@ class ActivationActivity : AppCompatActivity() {
             val deviceName = device.name ?: result.scanRecord?.deviceName ?: ""
             val addr = device.address ?: ""
 
-            // Ellenőrizzük a nevet ÉS a Service UUID-t is
-            // 1. Ellenőrzés: Szerepel a nevében, hogy SmartLock?
+            // Check both the name AND the Service UUID
+            // Check 1: Does the name contain "SmartLock"?
             val isSmartLockByName = deviceName.contains("SmartLock", ignoreCase = true)
 
-            // 2. Ellenőrzés: Sugározza a titkos Service UUID-nket?
+            // Check 2: Does it broadcast our secret Service UUID?
             val serviceUuids = result.scanRecord?.serviceUuids
             val isSmartLockByUUID = serviceUuids?.any {
                 it.uuid.toString().equals(ACTIVATION_SERVICE_UUID, ignoreCase = true)
             } == true
 
-            // 3. Ellenőrzés (ÚJ): Az Espressif (ESP32) gyári MAC címeivel kezdődik?
-            // Gyakori Espressif prefixek: 0C:DC:7E, 24:0A:C4, C8:F0:9E, stb.
+            // Check 3: Does the MAC start with a known Espressif (ESP32) prefix?
+            // Common Espressif prefixes: 0C:DC:7E, 24:0A:C4, C8:F0:9E, etc.
             val isEspressifMac = addr.startsWith("0C:DC:7E", ignoreCase = true) ||
                     addr.startsWith("24:0A:C4", ignoreCase = true) ||
                     addr.startsWith("C8:F0:9E", ignoreCase = true) ||
                     addr.startsWith("B8:F8:62", ignoreCase = true)
 
-            // Ha bármelyik feltétel igaz (Név VAGY Uuid VAGY Espressif MAC), próbáljunk rácsatlakozni!
+            // If any condition is true (name OR UUID OR Espressif MAC), try to connect
             if (isSmartLockByName || isSmartLockByUUID || isEspressifMac) {
-                Log.d(TAG, ">>> ESZKÖZ MEGTALÁLVA! Név='$deviceName' MAC=$addr")
+                Log.d(TAG, ">>> DEVICE FOUND! Name='$deviceName' MAC=$addr")
                 stopScan()
                 runOnUiThread {
-                    tvStatus.text = "Zár megtalálva!\nCsatlakozás: $addr..."
+                    tvStatus.text = "Lock found!\nConnecting: $addr..."
                 }
                 connectToDevice(device)
             }
@@ -227,7 +227,7 @@ class ActivationActivity : AppCompatActivity() {
                     Log.d(TAG, "GATT Connected! Requesting larger MTU...")
                     runOnUiThread { tvStatus.text = "Connected! Negotiating connection..." }
 
-                    // FIX: Megkérjük a telefont, hogy engedjen 256 byte-os adatcsomagokat küldeni a 20 byte helyett!
+                    // Ask the phone to allow 256-byte packets instead of the default 20 bytes
                     gatt?.requestMtu(256)
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
@@ -322,7 +322,7 @@ class ActivationActivity : AppCompatActivity() {
                             },
                             onFailure = { err ->
                                 Log.e(TAG, "grantAccess failed: $err")
-                                // a név mentését így is megpróbáljuk
+                                // try saving the name anyway
                                 FirebaseClient.getReference("locks/$lockId/name").setValue(lockName)
                             }
                         )
@@ -349,13 +349,8 @@ class ActivationActivity : AppCompatActivity() {
         getSharedPreferences("smartlock_prefs", MODE_PRIVATE)
             .edit().putString("my_beacon_uuid", beaconUUID).apply()
 
-        // Derive LOCK_ID from the ESP's BLE MAC address
-        // ESP BLE MAC e.g. "0C:DC:7E:5D:07:6E" → LOCK_0CDC7E5D076C
-        // But ESP uses base MAC (BLE MAC - 2), we need the LOCK_ID the ESP uses
-        // The ESP reports its MAC via NimBLE which is BLE MAC
-        // LOCK_ID format: LOCK_ + base MAC without colons
-        // Since we can't know the exact base MAC, we read it back from Firebase after activation
-        // For now, store the BLE address for matching
+        // Derive a fallback LOCK_ID from the ESP's BLE MAC address.
+        // The real LOCK_ID comes back in the OK|LOCK_ID response, so this is only a fallback.
         val bleAddr = gatt.device.address.uppercase().replace(":", "")
         detectedLockId = "LOCK_$bleAddr"
         Log.d(TAG, "Detected lock ID (from BLE addr): $detectedLockId")
