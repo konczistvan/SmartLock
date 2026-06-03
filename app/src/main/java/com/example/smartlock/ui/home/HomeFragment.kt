@@ -41,17 +41,15 @@ class HomeFragment : Fragment() {
         val tvEmail: TextView = view.findViewById(R.id.tvUserEmail)
         val tvStatus: TextView = view.findViewById(R.id.tvStatus)
         val ivLockIcon: ImageView = view.findViewById(R.id.ivLockIcon)
-        val spinnerLocks: Spinner = view.findViewById(R.id.spinnerLocks)
         val btnOpen: Button = view.findViewById(R.id.btnOpen)
         val btnClose: Button = view.findViewById(R.id.btnClose)
         val btnManage: Button = view.findViewById(R.id.btnManageAccess)
-
         val switchHybrid: SwitchMaterial = view.findViewById(R.id.switchAutoUnlock)
         val layoutGeo: View = view.findViewById(R.id.layoutGeoStatus)
         val tvGeoStatus: TextView = view.findViewById(R.id.tvGeofenceStatus)
         val btnSetLocation: Button = view.findViewById(R.id.btnSetLockLocation)
         val btnLogout: View = view.findViewById(R.id.btnLogout)
-
+        val layoutLockSelector: View = view.findViewById(R.id.layoutLockSelector)
         val switchGeo: SwitchMaterial? = view.findViewById(R.id.switchGeofence)
         switchGeo?.visibility = View.GONE
         (switchGeo?.parent as? View)?.visibility = View.GONE
@@ -69,26 +67,12 @@ class HomeFragment : Fragment() {
         viewModel.myLocksLive.observe(viewLifecycleOwner) { locks ->
             if (locks.isEmpty()) {
                 tvStatus.text = "Nincs zár. Adj hozzá a + gombbal."
+                layoutLockSelector.setOnClickListener(null)
                 return@observe
             }
-            val names = locks.map { it.name.ifEmpty { it.id } }
 
-            spinnerLocks.onItemSelectedListener = null
-
-            spinnerLocks.adapter = ArrayAdapter(
-                requireContext(), android.R.layout.simple_spinner_item, names
-            ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
-
-            val selectedIndex = locks.indexOfFirst { it.id == viewModel.currentLockId }
-            if (selectedIndex >= 0) {
-                spinnerLocks.setSelection(selectedIndex, false) // A 'false' kikapcsolja a felesleges animációt
-            }
-
-            spinnerLocks.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                    viewModel.selectLock(locks[pos].id)
-                }
-                override fun onNothingSelected(p: AdapterView<*>?) {}
+            layoutLockSelector.setOnClickListener {
+                showLockSelectorBottomSheet(locks)
             }
         }
 
@@ -171,6 +155,40 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun showLockSelectorBottomSheet(locks: List<com.example.smartlock.data.model.LockModel>) {
+        val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
+        val view = layoutInflater.inflate(R.layout.dialog_bottom_sheet_locks, null)
+
+        val container = view.findViewById<LinearLayout>(R.id.locksContainer)
+
+        locks.forEach { lock ->
+            val itemView = layoutInflater.inflate(R.layout.item_bottom_sheet_lock, container, false)
+            val tvName = itemView.findViewById<TextView>(R.id.tvLockName)
+            val ivCheck = itemView.findViewById<ImageView>(R.id.ivCheck)
+
+            tvName.text = lock.name.ifEmpty { lock.id }
+
+            if (lock.id == viewModel.currentLockId) {
+                tvName.setTypeface(null, android.graphics.Typeface.BOLD)
+                tvName.setTextColor(resources.getColor(R.color.primary, null))
+                ivCheck.visibility = View.VISIBLE
+            } else {
+                tvName.setTypeface(null, android.graphics.Typeface.NORMAL)
+                tvName.setTextColor(resources.getColor(R.color.text_primary, null))
+                ivCheck.visibility = View.GONE
+            }
+
+            itemView.setOnClickListener {
+                viewModel.selectLock(lock.id)
+                bottomSheetDialog.dismiss()
+            }
+
+            container.addView(itemView)
+        }
+
+        bottomSheetDialog.setContentView(view)
+        bottomSheetDialog.show()
+    }
 
     private fun hasLocationPermission() =
         ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED

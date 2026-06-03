@@ -3,64 +3,71 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center_horizontal">
+    android:padding="@dimen/spacing_24"
+    android:gravity="center_horizontal"
+    android:background="@color/background">
 
     <ImageView
         android:layout_width="80dp"
         android:layout_height="80dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="@dimen/spacing_24"
         android:src="@drawable/ic_launcher_foreground"
-        android:contentDescription="Lock icon" />
+        android:contentDescription="@string/activate_title" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Activate New Lock"
-        android:textSize="22sp"
+        android:layout_marginTop="@dimen/spacing_16"
+        android:text="@string/activate_title"
+        android:textSize="@dimen/text_22"
+        android:textColor="@color/text_primary"
         android:textStyle="bold" />
 
     <TextView
         android:id="@+id/tvActivationInstructions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:textSize="14sp"
-        android:lineSpacingExtra="4dp" />
+        android:layout_marginTop="@dimen/spacing_24"
+        android:textColor="@color/text_secondary"
+        android:textSize="@dimen/text_14"
+        android:lineSpacingExtra="@dimen/spacing_4" />
 
     <EditText
         android:id="@+id/etActivationLockName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Lock name (e.g. Front Door, Garage)"
+        android:hint="@string/activate_hint"
         android:inputType="text"
         android:maxLines="1"
-        android:layout_marginBottom="16dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"/>
+        android:textColorHint="@color/text_hint"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="@dimen/spacing_16"
+        android:layout_marginStart="@dimen/spacing_24"
+        android:layout_marginEnd="@dimen/spacing_24"/>
 
     <Button
         android:id="@+id/btnStartActivation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="Start Activation"
-        android:textSize="16sp" />
+        android:layout_marginTop="@dimen/spacing_32"
+        android:text="@string/btn_start_activation"
+        style="@style/Btn.Primary"/>
 
     <ProgressBar
         android:id="@+id/progressBarActivation"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="@dimen/spacing_16"
+        android:indeterminateTint="@color/primary"
         android:visibility="gone" />
 
     <TextView
         android:id="@+id/tvActivationStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:textSize="15sp"
+        android:layout_marginTop="@dimen/spacing_16"
+        android:textColor="@color/text_secondary"
+        android:textSize="@dimen/text_15"
         android:textAlignment="center" />
 
 </LinearLayout>

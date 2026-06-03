@@ -11,19 +11,18 @@
         android:layout_height="wrap_content"
         android:background="@drawable/bg_gradient_header"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:padding="@dimen/spacing_24">
 
         <TextView
             android:id="@+id/tvLogsTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Access Logs"
-            android:textSize="22sp"
+            android:text="@string/logs_title"
+            android:textSize="@dimen/text_22"
             android:textStyle="bold"
-            android:textColor="#FFFFFF" />
+            android:textColor="@color/white" />
     </LinearLayout>
 
-    <!-- Loglista -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -33,19 +32,18 @@
             android:id="@+id/lvLogs"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:padding="16dp"
-            android:dividerHeight="4dp" />
+            android:padding="@dimen/spacing_16"
+            android:dividerHeight="@dimen/spacing_4" />
 
         <TextView
             android:id="@+id/tvEmptyLogs"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="No logs yet"
+            android:text="@string/logs_empty"
             android:textAlignment="center"
             android:textColor="@color/text_secondary"
-            android:textSize="15sp"
+            android:textSize="@dimen/text_15"
             android:visibility="gone" />
     </FrameLayout>
-
 </LinearLayout>

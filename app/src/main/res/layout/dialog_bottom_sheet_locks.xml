@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_bottom_sheet"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/spacing_12"
+    android:paddingBottom="@dimen/spacing_24">
+
+    <!-- Behúzó "tabletta" (Drag handle) felül -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/bg_pill_primary"
+        android:backgroundTint="@color/divider"
+        android:layout_marginBottom="@dimen/spacing_16"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select a lock"
+        android:textSize="@dimen/text_17"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:paddingStart="@dimen/spacing_24"
+        android:paddingEnd="@dimen/spacing_24"
+        android:layout_marginBottom="@dimen/spacing_12" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:id="@+id/locksContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+</LinearLayout>

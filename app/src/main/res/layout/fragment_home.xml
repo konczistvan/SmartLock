@@ -9,17 +9,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp"
-        android:paddingTop="50dp"
-        android:paddingBottom="20dp">
+        android:paddingStart="@dimen/spacing_20"
+        android:paddingEnd="@dimen/spacing_20"
+        android:paddingTop="@dimen/spacing_50"
+        android:paddingBottom="@dimen/spacing_20">
 
-        <!-- ── Top bar ── -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginBottom="18dp">
+            android:layout_marginBottom="@dimen/spacing_18">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -30,94 +30,93 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Welcome back 👋"
-                    android:textSize="12sp"
+                    android:text="@string/home_welcome_back"
+                    android:textSize="@dimen/text_12"
                     android:textColor="@color/text_secondary" />
 
                 <TextView
                     android:id="@+id/tvUserEmail"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Loading..."
-                    android:textSize="17sp"
+                    android:text="@string/loading"
+                    android:textSize="@dimen/text_17"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
                     android:maxLines="1"
                     android:ellipsize="end" />
             </LinearLayout>
 
-            <!-- Logout icon button -->
             <FrameLayout
                 android:id="@+id/btnLogout"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="@dimen/circle_large"
+                android:layout_height="@dimen/circle_large"
                 android:background="@drawable/bg_card_small">
 
                 <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
+                    android:layout_width="@dimen/icon_medium"
+                    android:layout_height="@dimen/icon_medium"
                     android:layout_gravity="center"
-                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    android:src="@drawable/ic_logout"
                     app:tint="@color/text_secondary" />
             </FrameLayout>
         </LinearLayout>
 
-        <!-- ── STATUS CARD (gradient) ── -->
         <LinearLayout
             android:id="@+id/cardStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_gradient_card"
             android:orientation="vertical"
-            android:padding="22dp"
-            android:layout_marginBottom="16dp">
+            android:padding="@dimen/spacing_22"
+            android:layout_marginBottom="@dimen/spacing_16">
 
-            <!-- Row: lock icon + lock selector -->
             <LinearLayout
+                android:id="@+id/layoutLockSelector"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginBottom="@dimen/spacing_6">
 
                 <FrameLayout
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                    android:layout_width="@dimen/circle_xlarge"
+                    android:layout_height="@dimen/circle_xlarge"
                     android:background="@drawable/bg_circle_white">
-
                     <ImageView
                         android:id="@+id/ivLockIcon"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
+                        android:layout_width="@dimen/icon_xlarge"
+                        android:layout_height="@dimen/icon_xlarge"
                         android:layout_gravity="center"
-                        android:src="@android:drawable/ic_lock_idle_lock"
-                        app:tint="#5B5FD4" />
+                        android:src="@drawable/ic_lock"
+                        app:tint="@color/primary" />
                 </FrameLayout>
 
-                <Spinner
-                    android:id="@+id/spinnerLocks"
+                <View
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:background="@null"
-                    android:popupBackground="@color/surface"/>
+                    android:layout_height="0dp"
+                    android:layout_weight="1"/>
 
+                <ImageView
+                    android:layout_width="@dimen/icon_large"
+                    android:layout_height="@dimen/icon_large"
+                    android:src="@drawable/ic_arrow_drop_down"
+                    app:tint="@color/text_inverse_secondary" />
             </LinearLayout>
 
-            <!-- Status label -->
             <TextView
                 android:id="@+id/tvStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Door Locked"
-                android:textSize="28sp"
+                android:text="@string/home_door_locked"
+                android:textSize="@dimen/text_28"
                 android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:layout_marginTop="2dp"
-                android:layout_marginBottom="20dp"/>
+                android:textColor="@color/white"
+                android:layout_marginTop="@dimen/spacing_2"
+                android:layout_marginBottom="@dimen/spacing_20"/>
 
-            <!-- UNLOCK + LOCK buttons -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -126,96 +125,93 @@
                 <Button
                     android:id="@+id/btnOpen"
                     android:layout_width="0dp"
-                    android:layout_height="48dp"
+                    android:layout_height="@dimen/btn_height_large"
                     android:layout_weight="1"
-                    android:text="UNLOCK"
-                    android:textColor="#5B5FD4"
-                    android:textSize="13sp"
+                    android:text="@string/home_btn_unlock"
+                    android:textColor="@color/primary"
+                    android:textSize="@dimen/text_13"
                     android:textStyle="bold"
-                    android:backgroundTint="#FFFFFF"
-                    android:layout_marginEnd="8dp"
+                    android:backgroundTint="@color/white"
+                    android:layout_marginEnd="@dimen/spacing_8"
                     style="@style/Widget.MaterialComponents.Button"/>
 
                 <Button
                     android:id="@+id/btnClose"
                     android:layout_width="0dp"
-                    android:layout_height="48dp"
+                    android:layout_height="@dimen/btn_height_large"
                     android:layout_weight="1"
-                    android:text="LOCK"
-                    android:textColor="#FFFFFF"
-                    android:textSize="13sp"
+                    android:text="@string/home_btn_lock"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/text_13"
                     android:textStyle="bold"
                     android:background="@drawable/bg_ghost_btn"
-                    android:layout_marginStart="8dp"/>
+                    android:layout_marginStart="@dimen/spacing_8"/>
             </LinearLayout>
 
-            <!-- Manage access (owner only) -->
             <Button
                 android:id="@+id/btnManageAccess"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="⚙ Manage Access"
-                android:textColor="#AABFFF"
-                android:textSize="12sp"
+                android:layout_height="@dimen/btn_height_small"
+                android:text="@string/home_manage_access"
+                android:textColor="@color/text_inverse_secondary"
+                android:textSize="@dimen/text_12"
                 android:backgroundTint="@android:color/transparent"
                 android:visibility="gone"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="@dimen/spacing_4"
                 style="@style/Widget.MaterialComponents.Button.TextButton"/>
 
         </LinearLayout>
 
-        <!-- ── AUTOMATION ── -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="AUTOMATION"
+            android:text="@string/home_section_automation"
             style="@style/TextAppearance.SectionLabel"
-            android:layout_marginBottom="10dp"/>
+            android:layout_marginBottom="@dimen/spacing_10"/>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="@dimen/spacing_16">
 
-            <!-- BLE card -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="@drawable/bg_card"
                 android:orientation="vertical"
-                android:padding="16dp"
-                android:layout_marginEnd="8dp">
+                android:padding="@dimen/spacing_16"
+                android:layout_marginEnd="@dimen/spacing_8">
 
                 <FrameLayout
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
+                    android:layout_width="@dimen/circle_medium"
+                    android:layout_height="@dimen/circle_medium"
                     android:background="@drawable/bg_circle_primary"
-                    android:layout_marginBottom="10dp">
+                    android:layout_marginBottom="@dimen/spacing_10">
                     <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
+                        android:layout_width="@dimen/icon_medium"
+                        android:layout_height="@dimen/icon_medium"
                         android:layout_gravity="center"
-                        android:src="@android:drawable/stat_sys_data_bluetooth"
+                        android:src="@drawable/ic_bluetooth"
                         app:tint="@color/primary" />
                 </FrameLayout>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="BLE Proximity"
-                    android:textSize="13sp"
+                    android:text="@string/home_ble_proximity"
+                    android:textSize="@dimen/text_13"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Auto unlock"
-                    android:textSize="11sp"
+                    android:text="@string/home_auto_unlock"
+                    android:textSize="@dimen/text_11"
                     android:textColor="@color/text_secondary"
-                    android:layout_marginBottom="10dp"/>
+                    android:layout_marginBottom="@dimen/spacing_10"/>
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switchAutoUnlock"
@@ -224,44 +220,43 @@
                     android:checked="false"/>
             </LinearLayout>
 
-            <!-- Geofence card -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="@drawable/bg_card"
                 android:orientation="vertical"
-                android:padding="16dp"
-                android:layout_marginStart="8dp">
+                android:padding="@dimen/spacing_16"
+                android:layout_marginStart="@dimen/spacing_8">
 
                 <FrameLayout
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
+                    android:layout_width="@dimen/circle_medium"
+                    android:layout_height="@dimen/circle_medium"
                     android:background="@drawable/bg_circle_orange"
-                    android:layout_marginBottom="10dp">
+                    android:layout_marginBottom="@dimen/spacing_10">
                     <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
+                        android:layout_width="@dimen/icon_medium"
+                        android:layout_height="@dimen/icon_medium"
                         android:layout_gravity="center"
-                        android:src="@android:drawable/ic_menu_mylocation"
+                        android:src="@drawable/ic_my_location"
                         app:tint="@color/orange" />
                 </FrameLayout>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Geofencing"
-                    android:textSize="13sp"
+                    android:text="@string/home_geofencing"
+                    android:textSize="@dimen/text_13"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="GPS auto open"
-                    android:textSize="11sp"
+                    android:text="@string/home_gps_auto_open"
+                    android:textSize="@dimen/text_11"
                     android:textColor="@color/text_secondary"
-                    android:layout_marginBottom="10dp"/>
+                    android:layout_marginBottom="@dimen/spacing_10"/>
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switchGeofence"
@@ -269,18 +264,16 @@
                     android:layout_height="wrap_content"
                     android:checked="false"/>
             </LinearLayout>
-
         </LinearLayout>
 
-        <!-- GPS status (visible when geofence on) -->
         <LinearLayout
             android:id="@+id/layoutGeoStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card"
             android:orientation="vertical"
-            android:padding="14dp"
-            android:layout_marginBottom="4dp"
+            android:padding="@dimen/spacing_14"
+            android:layout_marginBottom="@dimen/spacing_4"
             android:visibility="gone">
 
             <LinearLayout
@@ -290,10 +283,10 @@
                 android:gravity="center_vertical">
 
                 <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@android:drawable/ic_menu_mylocation"
-                    android:layout_marginEnd="8dp"
+                    android:layout_width="@dimen/icon_small"
+                    android:layout_height="@dimen/icon_small"
+                    android:src="@drawable/ic_my_location"
+                    android:layout_marginEnd="@dimen/spacing_8"
                     app:tint="@color/orange" />
 
                 <TextView
@@ -301,21 +294,21 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="GPS: –"
-                    android:textSize="12sp"
+                    android:text="@string/home_gps_status_placeholder"
+                    android:textSize="@dimen/text_12"
                     android:textColor="@color/text_secondary"/>
             </LinearLayout>
 
             <Button
                 android:id="@+id/btnSetLockLocation"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:text="📍 Set Current Location as Lock"
-                android:textSize="12sp"
+                android:layout_height="@dimen/btn_height_medium"
+                android:text="@string/home_set_location"
+                android:textSize="@dimen/text_12"
                 android:textAllCaps="false"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="@dimen/spacing_10"
                 android:backgroundTint="@color/orange"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/white"
                 style="@style/Widget.MaterialComponents.Button"/>
         </LinearLayout>
 

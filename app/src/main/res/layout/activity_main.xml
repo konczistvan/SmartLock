@@ -10,15 +10,15 @@
         android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="66dp"/>
+        android:paddingBottom="@dimen/spacing_70"/>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
-        android:layout_height="66dp"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="@color/surface"
-        android:elevation="12dp"
+        android:elevation="@dimen/spacing_12"
         app:menu="@menu/bottom_nav_menu"
         app:itemIconTint="@drawable/nav_color"
         app:itemTextColor="@drawable/nav_color"

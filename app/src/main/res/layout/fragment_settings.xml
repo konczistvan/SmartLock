@@ -9,41 +9,42 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp"
-        android:paddingTop="50dp"
-        android:paddingBottom="30dp">
+        android:paddingStart="@dimen/spacing_20"
+        android:paddingEnd="@dimen/spacing_20"
+        android:paddingTop="@dimen/spacing_50"
+        android:paddingBottom="@dimen/spacing_30">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Settings"
-            android:textSize="22sp"
+            android:text="@string/settings_title"
+            android:textSize="@dimen/text_22"
             android:textStyle="bold"
             android:textColor="@color/text_primary" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Preferences &amp; security"
-            android:textSize="13sp"
+            android:text="@string/settings_subtitle"
+            android:textSize="@dimen/text_13"
             android:textColor="@color/text_secondary"
-            android:layout_marginBottom="22dp" />
+            android:layout_marginBottom="@dimen/spacing_22" />
 
-        <!-- ── ACCOUNT ── -->
+        <!-- ACCOUNT -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card"
             android:orientation="vertical"
-            android:padding="20dp"
-            android:layout_marginBottom="14dp">
+            android:padding="@dimen/spacing_20"
+            android:layout_marginBottom="@dimen/spacing_14">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ACCOUNT"
+                android:text="@string/settings_section_account"
                 style="@style/TextAppearance.SectionLabel"
-                android:layout_marginBottom="14dp" />
+                android:layout_marginBottom="@dimen/spacing_14" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -52,15 +53,15 @@
                 android:gravity="center_vertical">
 
                 <FrameLayout
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="@dimen/circle_large"
+                    android:layout_height="@dimen/circle_large"
                     android:background="@drawable/bg_circle_primary">
 
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="@dimen/icon_large"
+                        android:layout_height="@dimen/icon_large"
                         android:layout_gravity="center"
-                        android:src="@android:drawable/ic_menu_my_calendar"
+                        android:src="@drawable/ic_person"
                         app:tint="@color/primary" />
                 </FrameLayout>
 
@@ -69,19 +70,19 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical"
-                    android:layout_marginStart="12dp">
+                    android:layout_marginStart="@dimen/spacing_12">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Logged in as"
-                        android:textSize="12sp"
+                        android:text="@string/settings_logged_in_as"
+                        android:textSize="@dimen/text_12"
                         android:textColor="@color/text_secondary"/>
                     <TextView
                         android:id="@+id/tvUserEmail"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="user@email.com"
-                        android:textSize="14sp"
+                        android:text="@string/settings_email_placeholder"
+                        android:textSize="@dimen/text_14"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
                         android:maxLines="1"
@@ -90,32 +91,32 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- ── BLE PROXIMITY ── -->
+        <!-- BLE PROXIMITY -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card"
             android:orientation="vertical"
-            android:padding="20dp"
-            android:layout_marginBottom="14dp">
+            android:padding="@dimen/spacing_20"
+            android:layout_marginBottom="@dimen/spacing_14">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="4dp">
+                android:layout_marginBottom="@dimen/spacing_4">
 
                 <FrameLayout
-                    android:layout_width="34dp"
-                    android:layout_height="34dp"
+                    android:layout_width="@dimen/circle_small"
+                    android:layout_height="@dimen/circle_small"
                     android:background="@drawable/bg_circle_primary"
-                    android:layout_marginEnd="10dp">
+                    android:layout_marginEnd="@dimen/spacing_10">
                     <ImageView
-                        android:layout_width="17dp"
-                        android:layout_height="17dp"
+                        android:layout_width="@dimen/icon_medium"
+                        android:layout_height="@dimen/icon_medium"
                         android:layout_gravity="center"
-                        android:src="@android:drawable/stat_sys_data_bluetooth"
+                        android:src="@drawable/ic_bluetooth"
                         app:tint="@color/primary" />
                 </FrameLayout>
 
@@ -123,8 +124,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="BLE Proximity Range"
-                    android:textSize="14sp"
+                    android:text="@string/settings_ble_range"
+                    android:textSize="@dimen/text_14"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"/>
 
@@ -132,8 +133,8 @@
                     android:id="@+id/tvBleValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="-80 dBm"
-                    android:textSize="14sp"
+                    android:text="@string/settings_ble_placeholder"
+                    android:textSize="@dimen/text_14"
                     android:textColor="@color/primary"
                     android:textStyle="bold"/>
             </LinearLayout>
@@ -141,11 +142,11 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Lower value = must be closer to unlock"
-                android:textSize="12sp"
+                android:text="@string/settings_ble_desc"
+                android:textSize="@dimen/text_12"
                 android:textColor="@color/text_secondary"
-                android:layout_marginBottom="10dp"
-                android:layout_marginStart="44dp"/>
+                android:layout_marginBottom="@dimen/spacing_10"
+                android:layout_marginStart="@dimen/spacing_44"/>
 
             <SeekBar
                 android:id="@+id/seekBarBle"
@@ -160,69 +161,71 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="4dp">
+                android:layout_marginTop="@dimen/spacing_4">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="-100 dBm" android:textSize="10sp" android:textColor="@color/text_hint"/>
-                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1"/>
+                    android:text="@string/settings_ble_min" android:textSize="@dimen/text_10" android:textColor="@color/text_hint"/>
+                <View android:layout_width="0dp" android:layout_height="@dimen/spacing_1" android:layout_weight="1"/>
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="-40 dBm" android:textSize="10sp" android:textColor="@color/text_hint"/>
+                    android:text="@string/settings_ble_max" android:textSize="@dimen/text_10" android:textColor="@color/text_hint"/>
             </LinearLayout>
 
         </LinearLayout>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card"
             android:orientation="vertical"
-            android:padding="16dp"
-            android:layout_marginBottom="14dp">
+            android:padding="@dimen/spacing_16"
+            android:layout_marginBottom="@dimen/spacing_14">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="LIVE BLE TELEMETRY"
+                android:text="@string/settings_telemetry_title"
                 style="@style/TextAppearance.SectionLabel"
                 android:textColor="@color/primary"
-                android:layout_marginBottom="8dp"/>
+                android:layout_marginBottom="@dimen/spacing_8"/>
 
             <TextView
                 android:id="@+id/tvLiveDebug"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Várakozás az adatokra..."
-                android:textSize="14sp"
+                android:text="@string/settings_telemetry_waiting"
+                android:textSize="@dimen/text_14"
                 android:textStyle="bold"
                 android:textColor="@color/text_primary"
                 android:fontFamily="monospace"
-                android:background="#EEF0FF"
-                android:padding="10dp"/>
+                android:background="@color/primary_light"
+                android:padding="@dimen/spacing_10"/>
         </LinearLayout>
-        <!-- ── GEOFENCE ── -->
+
+        <!-- GEOFENCE -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card"
             android:orientation="vertical"
-            android:padding="20dp"
-            android:layout_marginBottom="14dp">
+            android:padding="@dimen/spacing_20"
+            android:layout_marginBottom="@dimen/spacing_14">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="4dp">
+                android:layout_marginBottom="@dimen/spacing_4">
 
                 <FrameLayout
-                    android:layout_width="34dp"
-                    android:layout_height="34dp"
+                    android:layout_width="@dimen/circle_small"
+                    android:layout_height="@dimen/circle_small"
                     android:background="@drawable/bg_circle_orange"
-                    android:layout_marginEnd="10dp">
+                    android:layout_marginEnd="@dimen/spacing_10">
                     <ImageView
-                        android:layout_width="17dp"
-                        android:layout_height="17dp"
+                        android:layout_width="@dimen/icon_medium"
+                        android:layout_height="@dimen/icon_medium"
                         android:layout_gravity="center"
-                        android:src="@android:drawable/ic_menu_mylocation"
+                        android:src="@drawable/ic_my_location"
                         app:tint="@color/orange" />
                 </FrameLayout>
 
@@ -230,8 +233,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Geofence Radius"
-                    android:textSize="14sp"
+                    android:text="@string/settings_geo_radius"
+                    android:textSize="@dimen/text_14"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"/>
 
@@ -239,8 +242,8 @@
                     android:id="@+id/tvGeoValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="50 m"
-                    android:textSize="14sp"
+                    android:text="@string/settings_geo_placeholder"
+                    android:textSize="@dimen/text_14"
                     android:textColor="@color/orange"
                     android:textStyle="bold"/>
             </LinearLayout>
@@ -248,11 +251,11 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Distance to trigger automatic unlock"
-                android:textSize="12sp"
+                android:text="@string/settings_geo_desc"
+                android:textSize="@dimen/text_12"
                 android:textColor="@color/text_secondary"
-                android:layout_marginBottom="10dp"
-                android:layout_marginStart="44dp"/>
+                android:layout_marginBottom="@dimen/spacing_10"
+                android:layout_marginStart="@dimen/spacing_44"/>
 
             <SeekBar
                 android:id="@+id/seekBarGeo"
@@ -267,42 +270,42 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="4dp">
+                android:layout_marginTop="@dimen/spacing_4">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="3 m" android:textSize="10sp" android:textColor="@color/text_hint"/>
-                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1"/>
+                    android:text="@string/settings_geo_min" android:textSize="@dimen/text_10" android:textColor="@color/text_hint"/>
+                <View android:layout_width="0dp" android:layout_height="@dimen/spacing_1" android:layout_weight="1"/>
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="500 m" android:textSize="10sp" android:textColor="@color/text_hint"/>
+                    android:text="@string/settings_geo_max" android:textSize="@dimen/text_10" android:textColor="@color/text_hint"/>
             </LinearLayout>
 
         </LinearLayout>
 
-        <!-- ── DEADZONE ── -->
+        <!-- DEADZONE -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card"
             android:orientation="vertical"
-            android:padding="20dp"
-            android:layout_marginBottom="14dp">
+            android:padding="@dimen/spacing_20"
+            android:layout_marginBottom="@dimen/spacing_14">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="4dp">
+                android:layout_marginBottom="@dimen/spacing_4">
 
                 <FrameLayout
-                    android:layout_width="34dp"
-                    android:layout_height="34dp"
+                    android:layout_width="@dimen/circle_small"
+                    android:layout_height="@dimen/circle_small"
                     android:background="@drawable/bg_circle_orange"
-                    android:layout_marginEnd="10dp">
+                    android:layout_marginEnd="@dimen/spacing_10">
                     <ImageView
-                        android:layout_width="17dp"
-                        android:layout_height="17dp"
+                        android:layout_width="@dimen/icon_medium"
+                        android:layout_height="@dimen/icon_medium"
                         android:layout_gravity="center"
-                        android:src="@android:drawable/ic_menu_compass"
+                        android:src="@drawable/ic_radar"
                         app:tint="@color/orange" />
                 </FrameLayout>
 
@@ -310,8 +313,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Deadzone Radius"
-                    android:textSize="14sp"
+                    android:text="@string/settings_deadzone_radius"
+                    android:textSize="@dimen/text_14"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"/>
 
@@ -319,8 +322,8 @@
                     android:id="@+id/tvDeadzoneValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="10 m"
-                    android:textSize="14sp"
+                    android:text="@string/settings_deadzone_placeholder"
+                    android:textSize="@dimen/text_14"
                     android:textColor="@color/orange"
                     android:textStyle="bold"/>
             </LinearLayout>
@@ -328,11 +331,11 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Inside this range = already home (won't unlock)"
-                android:textSize="12sp"
+                android:text="@string/settings_deadzone_desc"
+                android:textSize="@dimen/text_12"
                 android:textColor="@color/text_secondary"
-                android:layout_marginBottom="10dp"
-                android:layout_marginStart="44dp"/>
+                android:layout_marginBottom="@dimen/spacing_10"
+                android:layout_marginStart="@dimen/spacing_44"/>
 
             <SeekBar
                 android:id="@+id/seekBarDeadzone"
@@ -347,30 +350,30 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="4dp">
+                android:layout_marginTop="@dimen/spacing_4">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="1 m" android:textSize="10sp" android:textColor="@color/text_hint"/>
-                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1"/>
+                    android:text="@string/settings_deadzone_min" android:textSize="@dimen/text_10" android:textColor="@color/text_hint"/>
+                <View android:layout_width="0dp" android:layout_height="@dimen/spacing_1" android:layout_weight="1"/>
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="50 m" android:textSize="10sp" android:textColor="@color/text_hint"/>
+                    android:text="@string/settings_deadzone_max" android:textSize="@dimen/text_10" android:textColor="@color/text_hint"/>
             </LinearLayout>
         </LinearLayout>
 
-        <!-- ── ABOUT ── -->
+        <!-- ABOUT -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card"
             android:orientation="vertical"
-            android:padding="20dp"
-            android:layout_marginBottom="14dp">
+            android:padding="@dimen/spacing_20"
+            android:layout_marginBottom="@dimen/spacing_14">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ABOUT"
+                android:text="@string/settings_section_about"
                 style="@style/TextAppearance.SectionLabel"
-                android:layout_marginBottom="12dp"/>
+                android:layout_marginBottom="@dimen/spacing_12"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -378,37 +381,37 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
                 <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:text="Version"
-                    android:textSize="14sp" android:textColor="@color/text_primary"/>
+                    android:layout_weight="1" android:text="@string/version_label"
+                    android:textSize="@dimen/text_14" android:textColor="@color/text_primary"/>
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="1.0.0" android:textSize="14sp"
+                    android:text="@string/version_value" android:textSize="@dimen/text_14"
                     android:textColor="@color/text_secondary"/>
             </LinearLayout>
         </LinearLayout>
 
-        <!-- ── DANGER ZONE ── -->
+        <!-- DANGER ZONE -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_danger_zone"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:padding="@dimen/spacing_20">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Danger Zone"
-                android:textSize="14sp"
+                android:text="@string/settings_danger_zone"
+                android:textSize="@dimen/text_14"
                 android:textStyle="bold"
                 android:textColor="@color/red"
-                android:layout_marginBottom="14dp"/>
+                android:layout_marginBottom="@dimen/spacing_14"/>
 
             <Button
                 android:id="@+id/btnLogout"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:text="Log Out"
-                android:textSize="14sp"
+                android:layout_height="@dimen/btn_height_xlarge"
+                android:text="@string/settings_log_out"
+                android:textSize="@dimen/text_14"
                 android:textStyle="bold"
                 style="@style/Btn.Danger"/>
 

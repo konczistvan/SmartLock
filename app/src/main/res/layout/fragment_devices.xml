@@ -12,19 +12,18 @@
         android:layout_height="wrap_content"
         android:background="@drawable/bg_gradient_header"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:padding="@dimen/spacing_24">
 
         <TextView
             android:id="@+id/tvDevicesTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="My Devices"
-            android:textSize="22sp"
+            android:text="@string/devices_title"
+            android:textSize="@dimen/text_22"
             android:textStyle="bold"
-            android:textColor="#FFFFFF" />
+            android:textColor="@color/white" />
     </LinearLayout>
 
-    <!-- Eszközlista -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -34,18 +33,18 @@
             android:id="@+id/lvDevices"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:padding="16dp"
-            android:dividerHeight="8dp" />
+            android:padding="@dimen/spacing_16"
+            android:dividerHeight="@dimen/spacing_8" />
 
         <TextView
             android:id="@+id/tvEmptyDevices"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="No devices yet.\nTap + to add one."
+            android:text="@string/devices_empty"
             android:textAlignment="center"
             android:textColor="@color/text_secondary"
-            android:textSize="15sp"
+            android:textSize="@dimen/text_15"
             android:visibility="gone" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -53,10 +52,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
-            android:layout_margin="24dp"
-            android:src="@android:drawable/ic_input_add"
+            android:layout_margin="@dimen/spacing_24"
+            android:src="@drawable/ic_add"
             app:backgroundTint="@color/primary"
-            app:tint="#FFFFFF" />
+            app:tint="@color/white" />
     </FrameLayout>
-
 </LinearLayout>

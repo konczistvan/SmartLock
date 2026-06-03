@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- activity_manage_access.xml -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -9,44 +8,36 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="150dp"
+        android:layout_height="@dimen/header_height_small"
         android:background="@drawable/bg_gradient_header"
         android:orientation="vertical"
         android:gravity="bottom"
-        android:padding="22dp">
-
-        <ImageView
-            android:id="@+id/btnBack"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:src="@android:drawable/ic_menu_revert"
-            android:layout_marginBottom="14dp"
-            app:tint="#AABFFF" />
+        android:padding="@dimen/spacing_22">
 
         <TextView
             android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Manage Access"
-            android:textSize="22sp"
+            android:text="@string/manage_title"
+            android:textSize="@dimen/text_22"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"/>
+            android:textColor="@color/white"/>
 
         <TextView
             android:id="@+id/tvSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Who can access this lock"
-            android:textSize="13sp"
-            android:textColor="#AABFFF"/>
+            android:text="@string/manage_subtitle"
+            android:textSize="@dimen/text_13"
+            android:textColor="@color/text_inverse_secondary"/>
     </LinearLayout>
 
     <ProgressBar
         android:id="@+id/progressBar"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="@dimen/spacing_14"
         android:indeterminateTint="@color/primary"
         android:visibility="gone"/>
 
@@ -55,26 +46,24 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp"
+        android:paddingStart="@dimen/spacing_16"
+        android:paddingEnd="@dimen/spacing_16"
+        android:paddingTop="@dimen/spacing_10"
+        android:paddingBottom="@dimen/spacing_10"
         android:clipToPadding="false"/>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp"
+        android:padding="@dimen/spacing_16"
         android:background="@color/surface"
-        android:elevation="8dp">
+        android:elevation="@dimen/spacing_8">
 
         <Button
             android:id="@+id/btnGrantAccess"
             android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:text="+ Grant Access to User"
-            android:textSize="14sp"
-            android:textStyle="bold"
+            android:layout_height="@dimen/btn_height_xlarge"
+            android:text="@string/btn_grant_access"
             style="@style/Btn.Primary"/>
     </LinearLayout>
 

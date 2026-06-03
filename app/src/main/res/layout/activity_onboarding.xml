@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:background="@drawable/bg_splash">
 
@@ -11,206 +12,200 @@
         android:layout_weight="1"
         android:orientation="vertical"
         android:gravity="center"
-        android:padding="32dp">
+        android:padding="@dimen/spacing_32">
 
-        <!-- Lock icon -->
         <FrameLayout
-            android:layout_width="96dp"
-            android:layout_height="96dp"
+            android:layout_width="@dimen/circle_huge"
+            android:layout_height="@dimen/circle_huge"
             android:background="@drawable/bg_circle_white">
             <ImageView
-                android:layout_width="52dp"
-                android:layout_height="52dp"
+                android:layout_width="@dimen/icon_huge"
+                android:layout_height="@dimen/icon_huge"
                 android:layout_gravity="center"
-                android:src="@android:drawable/ic_lock_idle_lock"
-                android:tint="#5B5FD4"/>
+                android:src="@drawable/ic_lock"
+                app:tint="@color/primary"/>
         </FrameLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Welcome to"
-            android:textSize="16sp"
-            android:textColor="#AABFFF"
-            android:layout_marginTop="28dp"/>
+            android:text="@string/onboarding_welcome"
+            android:textSize="@dimen/text_16"
+            android:textColor="@color/text_inverse_secondary"
+            android:layout_marginTop="@dimen/spacing_28"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="SmartLock"
-            android:textSize="36sp"
+            android:text="@string/app_name"
+            android:textSize="@dimen/text_36"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/white"
             android:letterSpacing="-0.02"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Smart door control powered by ESP32.\nUnlock automatically or manually."
-            android:textSize="14sp"
-            android:textColor="#AABFFF"
+            android:text="@string/onboarding_desc"
+            android:textSize="@dimen/text_14"
+            android:textColor="@color/text_inverse_secondary"
             android:gravity="center"
-            android:layout_marginTop="10dp"
-            android:lineSpacingExtra="4dp"/>
+            android:layout_marginTop="@dimen/spacing_10"
+            android:lineSpacingExtra="@dimen/spacing_4"/>
 
-        <!-- Feature rows -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginTop="36dp">
+            android:layout_marginTop="@dimen/spacing_36">
 
-            <!-- BLE -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="18dp">
+                android:layout_marginBottom="@dimen/spacing_18">
                 <FrameLayout
-                    android:layout_width="42dp"
-                    android:layout_height="42dp"
+                    android:layout_width="@dimen/circle_large"
+                    android:layout_height="@dimen/circle_large"
                     android:background="@drawable/bg_circle_primary">
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="@dimen/icon_large"
+                        android:layout_height="@dimen/icon_large"
                         android:layout_gravity="center"
-                        android:src="@android:drawable/stat_sys_data_bluetooth"
-                        android:tint="#5B5FD4"/>
+                        android:src="@drawable/ic_bluetooth"
+                        app:tint="@color/primary"/>
                 </FrameLayout>
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical"
-                    android:layout_marginStart="14dp">
+                    android:layout_marginStart="@dimen/spacing_14">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="BLE Proximity"
-                        android:textSize="14sp"
+                        android:text="@string/onboarding_ble_title"
+                        android:textSize="@dimen/text_14"
                         android:textStyle="bold"
-                        android:textColor="#FFFFFF"/>
+                        android:textColor="@color/white"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Auto unlock when you get close"
-                        android:textSize="12sp"
-                        android:textColor="#AABFFF"/>
+                        android:text="@string/onboarding_ble_desc"
+                        android:textSize="@dimen/text_12"
+                        android:textColor="@color/text_inverse_secondary"/>
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Geofence -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="18dp">
+                android:layout_marginBottom="@dimen/spacing_18">
                 <FrameLayout
-                    android:layout_width="42dp"
-                    android:layout_height="42dp"
+                    android:layout_width="@dimen/circle_large"
+                    android:layout_height="@dimen/circle_large"
                     android:background="@drawable/bg_circle_orange">
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="@dimen/icon_large"
+                        android:layout_height="@dimen/icon_large"
                         android:layout_gravity="center"
-                        android:src="@android:drawable/ic_menu_mylocation"
-                        android:tint="#F59E0B"/>
+                        android:src="@drawable/ic_my_location"
+                        app:tint="@color/orange"/>
                 </FrameLayout>
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical"
-                    android:layout_marginStart="14dp">
+                    android:layout_marginStart="@dimen/spacing_14">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Geofencing"
-                        android:textSize="14sp"
+                        android:text="@string/onboarding_geo_title"
+                        android:textSize="@dimen/text_14"
                         android:textStyle="bold"
-                        android:textColor="#FFFFFF"/>
+                        android:textColor="@color/white"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Auto unlock when you arrive home"
-                        android:textSize="12sp"
-                        android:textColor="#AABFFF"/>
+                        android:text="@string/onboarding_geo_desc"
+                        android:textSize="@dimen/text_12"
+                        android:textColor="@color/text_inverse_secondary"/>
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Secure -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
                 <FrameLayout
-                    android:layout_width="42dp"
-                    android:layout_height="42dp"
+                    android:layout_width="@dimen/circle_large"
+                    android:layout_height="@dimen/circle_large"
                     android:background="@drawable/bg_circle_green">
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="@dimen/icon_large"
+                        android:layout_height="@dimen/icon_large"
                         android:layout_gravity="center"
-                        android:src="@android:drawable/ic_lock_idle_lock"
-                        android:tint="#10B981"/>
+                        android:src="@drawable/ic_lock"
+                        app:tint="@color/green"/>
                 </FrameLayout>
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical"
-                    android:layout_marginStart="14dp">
+                    android:layout_marginStart="@dimen/spacing_14">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Secure Access"
-                        android:textSize="14sp"
+                        android:text="@string/onboarding_secure_title"
+                        android:textSize="@dimen/text_14"
                         android:textStyle="bold"
-                        android:textColor="#FFFFFF"/>
+                        android:textColor="@color/white"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Share access with time limits"
-                        android:textSize="12sp"
-                        android:textColor="#AABFFF"/>
+                        android:text="@string/onboarding_secure_desc"
+                        android:textSize="@dimen/text_12"
+                        android:textColor="@color/text_inverse_secondary"/>
                 </LinearLayout>
             </LinearLayout>
 
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Bottom buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp"
-        android:paddingBottom="44dp">
+        android:padding="@dimen/spacing_24"
+        android:paddingBottom="@dimen/spacing_44">
 
         <Button
             android:id="@+id/btnGetStarted"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="Get Started"
-            android:textSize="16sp"
+            android:layout_height="@dimen/btn_height_xxlarge"
+            android:text="@string/btn_get_started"
+            android:textSize="@dimen/text_16"
             android:textStyle="bold"
-            android:textColor="#5B5FD4"
-            android:backgroundTint="#FFFFFF"
+            android:textColor="@color/primary"
+            android:backgroundTint="@color/white"
             style="@style/Widget.MaterialComponents.Button"/>
 
         <TextView
             android:id="@+id/tvAlreadyHaveAccount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Already have an account? Log in"
-            android:textColor="#AABFFF"
-            android:textSize="14sp"
-            android:padding="14dp"
+            android:text="@string/go_to_login"
+            android:textColor="@color/text_inverse_secondary"
+            android:textSize="@dimen/text_14"
+            android:padding="@dimen/spacing_14"
             android:layout_gravity="center_horizontal"
-            android:layout_marginTop="4dp"/>
+            android:layout_marginTop="@dimen/spacing_4"/>
 
     </LinearLayout>
 

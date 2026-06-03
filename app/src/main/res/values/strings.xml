@@ -1,3 +1,112 @@
 <resources>
     <string name="app_name">SmartLock</string>
+
+    <string name="loading">Loading...</string>
+    <string name="version_label">Version</string>
+    <string name="version_value">1.0.0</string>
+    <string name="or_text">\u00A0 or \u00A0</string> <string name="welcome_back">Welcome back</string>
+    <string name="login_subtitle">Log in to your SmartLock account</string>
+    <string name="email_label">EMAIL</string>
+    <string name="email_hint">your@email.com</string>
+    <string name="password_label">PASSWORD</string>
+    <string name="password_hint_login">••••••••</string>
+    <string name="password_hint_register">Min. 6 characters</string>
+    <string name="btn_login">Log In</string>
+    <string name="go_to_register">Don\'t have an account? Sign up</string>
+
+    <string name="register_title">Create Account</string>
+    <string name="register_subtitle">Join SmartLock to get started</string>
+    <string name="fullname_label">FULL NAME</string>
+    <string name="fullname_hint">John Doe</string>
+    <string name="btn_register">Create Account</string>
+    <string name="go_to_login">Already have an account? Log in</string>
+
+    <string name="onboarding_welcome">Welcome to</string>
+    <string name="onboarding_desc">Smart door control powered by ESP32.\nUnlock automatically or manually.</string>
+    <string name="onboarding_ble_title">BLE Proximity</string>
+    <string name="onboarding_ble_desc">Auto unlock when you get close</string>
+    <string name="onboarding_geo_title">Geofencing</string>
+    <string name="onboarding_geo_desc">Auto unlock when you arrive home</string>
+    <string name="onboarding_secure_title">Secure Access</string>
+    <string name="onboarding_secure_desc">Share access with time limits</string>
+    <string name="btn_get_started">Get Started</string>
+
+    <string name="splash_desc">Smart access, powered by ESP32</string>
+
+    <string name="activate_title">Activate New Lock</string>
+    <string name="activate_hint">Lock name (e.g. Front Door, Garage)</string>
+    <string name="btn_start_activation">Start Activation</string>
+
+    <string name="add_lock_title">Add New Lock</string>
+    <string name="add_lock_subtitle">Connect your ESP32 device</string>
+    <string name="add_lock_info">Lock ID = LOCK_ID from your ESP32 code\nBLE MAC = printed in Serial Monitor on boot</string>
+    <string name="lock_name_label">LOCK NAME</string>
+    <string name="lock_name_hint">e.g. Front Door</string>
+    <string name="lock_id_label">LOCK ID (from ESP32 code)</string>
+    <string name="lock_id_hint">LOCK_0CDC7E614160</string>
+    <string name="mac_label">BLE MAC ADDRESS (optional)</string>
+    <string name="mac_hint">0CDC7E614162</string>
+    <string name="lat_label">LATITUDE</string>
+    <string name="lng_label">LONGITUDE</string>
+    <string name="geo_hint">GPS coordinates of the lock (for geofencing)</string>
+    <string name="btn_add_lock">Add Lock</string>
+
+    <string name="manage_title">Manage Access</string>
+    <string name="manage_subtitle">Who can access this lock</string>
+    <string name="btn_grant_access">+ Grant Access to User</string>
+    <string name="btn_revoke">Revoke</string>
+    <string name="user_email_label">USER EMAIL</string>
+    <string name="access_duration_label">ACCESS DURATION</string>
+
+    <string name="devices_title">My Devices</string>
+    <string name="devices_empty">No devices yet.\nTap + to add one.</string>
+    <string name="logs_title">Access Logs</string>
+    <string name="logs_empty">No logs yet</string>
+
+    <string name="home_welcome_back">Welcome back 👋</string>
+    <string name="home_door_locked">Door Locked</string>
+    <string name="home_btn_unlock">UNLOCK</string>
+    <string name="home_btn_lock">LOCK</string>
+    <string name="home_manage_access">⚙ Manage Access</string>
+    <string name="home_section_automation">AUTOMATION</string>
+    <string name="home_ble_proximity">BLE Proximity</string>
+    <string name="home_auto_unlock">Auto unlock</string>
+    <string name="home_geofencing">Geofencing</string>
+    <string name="home_gps_auto_open">GPS auto open</string>
+    <string name="home_gps_status_placeholder">GPS: –</string>
+    <string name="home_set_location">📍 Set Current Location as Lock</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_subtitle">Preferences &amp; security</string>
+    <string name="settings_section_account">ACCOUNT</string>
+    <string name="settings_logged_in_as">Logged in as</string>
+    <string name="settings_email_placeholder">user@email.com</string>
+
+    <string name="settings_ble_range">BLE Proximity Range</string>
+    <string name="settings_ble_desc">Lower value = must be closer to unlock</string>
+    <string name="settings_ble_min">-100 dBm</string>
+    <string name="settings_ble_max">-40 dBm</string>
+    <string name="settings_ble_placeholder">-80 dBm</string>
+
+    <string name="settings_telemetry_title">LIVE BLE TELEMETRY</string>
+    <string name="settings_telemetry_waiting">Várakozás az adatokra...</string>
+
+    <string name="settings_geo_radius">Geofence Radius</string>
+    <string name="settings_geo_desc">Distance to trigger automatic unlock</string>
+    <string name="settings_geo_min">3 m</string>
+    <string name="settings_geo_max">500 m</string>
+    <string name="settings_geo_placeholder">50 m</string>
+
+    <string name="settings_deadzone_radius">Deadzone Radius</string>
+    <string name="settings_deadzone_desc">Inside this range = already home (won\'t unlock)</string>
+    <string name="settings_deadzone_min">1 m</string>
+    <string name="settings_deadzone_max">50 m</string>
+    <string name="settings_deadzone_placeholder">10 m</string>
+
+    <string name="settings_section_about">ABOUT</string>
+    <string name="settings_danger_zone">Danger Zone</string>
+    <string name="settings_log_out">Log Out</string>
+
+    <string name="role_owner">Owner</string>
+    <string name="expiry_permanent">Permanent</string>
 </resources>

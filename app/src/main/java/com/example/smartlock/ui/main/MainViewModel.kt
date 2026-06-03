@@ -175,6 +175,9 @@ class MainViewModel : ViewModel() {
         currentLockId = lockId
         pendingManualOpen = false
 
+        val newLockName = myLocks.find { it.id == lockId }?.name ?: lockId
+        _statusText.postValue("[$newLockName]\nLoading...")
+
         val prefs = appContext?.getSharedPreferences("smartlock_prefs", Context.MODE_PRIVATE)
         geofenceRadiusMeters = prefs?.getInt("geo_radius_$lockId", 50)?.toFloat() ?: 50f
         deadzoneRadiusMeters = prefs?.getInt("geo_deadzone_$lockId", 10)?.toFloat() ?: 10f
@@ -202,10 +205,8 @@ class MainViewModel : ViewModel() {
 
                 if (lockModel.status == "UNLOCKED" && lastLoggedStatus != "UNLOCKED") {
 
-                    // HAZATÉRTÜNK!
                     if (isHybridModeEnabled) {
                         _userState.postValue(UserState.HOME)
-                        // JAVÍTVA: Explicit paraméter átadása
                         updateUnifiedState(macroParam = UserState.HOME)
                     }
 

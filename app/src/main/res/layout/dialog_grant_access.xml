@@ -3,30 +3,30 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:padding="@dimen/spacing_8">
 
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="USER EMAIL" style="@style/TextAppearance.SectionLabel"
-        android:layout_marginBottom="8dp" android:layout_marginTop="8dp"/>
+        android:text="@string/user_email_label" style="@style/TextAppearance.SectionLabel"
+        android:layout_marginBottom="@dimen/spacing_8" android:layout_marginTop="@dimen/spacing_8"/>
 
     <EditText
         android:id="@+id/etEmail"
-        android:layout_width="match_parent" android:layout_height="52dp"
+        android:layout_width="match_parent" android:layout_height="@dimen/btn_height_xlarge"
         android:background="@drawable/bg_input" android:inputType="textEmailAddress"
-        android:hint="user@email.com" android:textColorHint="@color/text_hint"
-        android:textColor="@color/text_primary" android:textSize="15sp"
-        android:paddingStart="16dp" android:paddingEnd="16dp"
-        android:layout_marginBottom="16dp"/>
+        android:hint="@string/email_hint" android:textColorHint="@color/text_hint"
+        android:textColor="@color/text_primary" android:textSize="@dimen/text_15"
+        android:paddingStart="@dimen/spacing_16" android:paddingEnd="@dimen/spacing_16"
+        android:layout_marginBottom="@dimen/spacing_16"/>
 
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="ACCESS DURATION" style="@style/TextAppearance.SectionLabel"
-        android:layout_marginBottom="8dp"/>
+        android:text="@string/access_duration_label" style="@style/TextAppearance.SectionLabel"
+        android:layout_marginBottom="@dimen/spacing_8"/>
 
     <Spinner
         android:id="@+id/spinnerDuration"
         android:layout_width="match_parent"
-        android:layout_height="52dp"
+        android:layout_height="@dimen/btn_height_xlarge"
         android:background="@drawable/bg_input"
-        android:padding="8dp"/>
+        android:padding="@dimen/spacing_8"/>
 
 </LinearLayout>
