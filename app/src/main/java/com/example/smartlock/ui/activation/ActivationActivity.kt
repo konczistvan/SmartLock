@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.example.smartlock.R
 import com.example.smartlock.api.FirebaseClient
+import com.example.smartlock.data.repository.PermissionRepository
 import java.util.UUID
 
 class ActivationActivity : AppCompatActivity() {
@@ -165,14 +166,29 @@ class ActivationActivity : AppCompatActivity() {
             val deviceName = device.name ?: result.scanRecord?.deviceName ?: ""
             val addr = device.address ?: ""
 
-            // FIX: detect by name only (works for ANY ESP32 MAC prefix)
-            val isSmartLock = deviceName.contains("SmartLock", ignoreCase = true)
+            // Ellenőrizzük a nevet ÉS a Service UUID-t is
+            // 1. Ellenőrzés: Szerepel a nevében, hogy SmartLock?
+            val isSmartLockByName = deviceName.contains("SmartLock", ignoreCase = true)
 
-            if (isSmartLock) {
-                Log.d(TAG, ">>> SMARTLOCK FOUND! name='$deviceName' addr=$addr")
+            // 2. Ellenőrzés: Sugározza a titkos Service UUID-nket?
+            val serviceUuids = result.scanRecord?.serviceUuids
+            val isSmartLockByUUID = serviceUuids?.any {
+                it.uuid.toString().equals(ACTIVATION_SERVICE_UUID, ignoreCase = true)
+            } == true
+
+            // 3. Ellenőrzés (ÚJ): Az Espressif (ESP32) gyári MAC címeivel kezdődik?
+            // Gyakori Espressif prefixek: 0C:DC:7E, 24:0A:C4, C8:F0:9E, stb.
+            val isEspressifMac = addr.startsWith("0C:DC:7E", ignoreCase = true) ||
+                    addr.startsWith("24:0A:C4", ignoreCase = true) ||
+                    addr.startsWith("C8:F0:9E", ignoreCase = true) ||
+                    addr.startsWith("B8:F8:62", ignoreCase = true)
+
+            // Ha bármelyik feltétel igaz (Név VAGY Uuid VAGY Espressif MAC), próbáljunk rácsatlakozni!
+            if (isSmartLockByName || isSmartLockByUUID || isEspressifMac) {
+                Log.d(TAG, ">>> ESZKÖZ MEGTALÁLVA! Név='$deviceName' MAC=$addr")
                 stopScan()
                 runOnUiThread {
-                    tvStatus.text = "Found lock: $addr\nConnecting..."
+                    tvStatus.text = "Zár megtalálva!\nCsatlakozás: $addr..."
                 }
                 connectToDevice(device)
             }
@@ -208,9 +224,11 @@ class ActivationActivity : AppCompatActivity() {
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
-                    Log.d(TAG, "GATT Connected!")
-                    runOnUiThread { tvStatus.text = "Connected! Discovering services..." }
-                    gatt?.discoverServices()
+                    Log.d(TAG, "GATT Connected! Requesting larger MTU...")
+                    runOnUiThread { tvStatus.text = "Connected! Negotiating connection..." }
+
+                    // FIX: Megkérjük a telefont, hogy engedjen 256 byte-os adatcsomagokat küldeni a 20 byte helyett!
+                    gatt?.requestMtu(256)
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     runOnUiThread {
@@ -221,6 +239,13 @@ class ActivationActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+
+        @SuppressLint("MissingPermission")
+        override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int) {
+            Log.d(TAG, "MTU changed to $mtu")
+            runOnUiThread { tvStatus.text = "MTU ready. Discovering services..." }
+            gatt?.discoverServices()
         }
 
         @SuppressLint("MissingPermission")
@@ -278,17 +303,29 @@ class ActivationActivity : AppCompatActivity() {
             runOnUiThread {
                 progressBar.visibility = View.GONE
 
-                // Response format: "OK|LOCK_ID" or "FAIL"
                 if (response.startsWith("OK")) {
-                    // Extract LOCK_ID from response
                     val parts = response.split("|")
                     val lockId = if (parts.size >= 2) parts[1] else detectedLockId
-
                     val lockName = etLockName.text.toString().trim().ifEmpty { "SmartLock" }
-                    if (lockId.isNotEmpty()) {
-                        FirebaseClient.getReference("locks/$lockId/name")
-                            .setValue(lockName)
-                        Log.d(TAG, "Lock name saved: '$lockName' for $lockId")
+                    val uid = FirebaseClient.auth.currentUser?.uid
+
+                    if (lockId.isNotEmpty() && uid != null) {
+                        PermissionRepository().grantAccess(
+                            lockId = lockId,
+                            targetUid = uid,
+                            role = "owner",
+                            expiresAt = null,
+                            grantedByUid = uid,
+                            onSuccess = {
+                                FirebaseClient.getReference("locks/$lockId/name").setValue(lockName)
+                                Log.d(TAG, "Permission + name saved for $lockId")
+                            },
+                            onFailure = { err ->
+                                Log.e(TAG, "grantAccess failed: $err")
+                                // a név mentését így is megpróbáljuk
+                                FirebaseClient.getReference("locks/$lockId/name").setValue(lockName)
+                            }
+                        )
                     }
 
                     tvStatus.text = "✅ Lock '$lockName' activated!\n\nYou are now the owner."
