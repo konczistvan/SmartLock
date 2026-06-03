@@ -24,7 +24,6 @@ class HomeFragment : Fragment() {
 
     private val viewModel: MainViewModel by activityViewModels()
 
-    // Engedélykérő ablak eredményeinek kezelése
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -47,21 +46,19 @@ class HomeFragment : Fragment() {
         val btnClose: Button = view.findViewById(R.id.btnClose)
         val btnManage: Button = view.findViewById(R.id.btnManageAccess)
 
-        // Ezt az egy kapcsolót használjuk a teljes Hibrid (BLE + GPS) mód vezérlésére
         val switchHybrid: SwitchMaterial = view.findViewById(R.id.switchAutoUnlock)
         val layoutGeo: View = view.findViewById(R.id.layoutGeoStatus)
         val tvGeoStatus: TextView = view.findViewById(R.id.tvGeofenceStatus)
         val btnSetLocation: Button = view.findViewById(R.id.btnSetLockLocation)
         val btnLogout: View = view.findViewById(R.id.btnLogout)
 
-        // Ha az XML-ben benne maradt a régi Geofence kapcsoló, szoftveresen eltüntetjük, hogy ne zavarjon be
         val switchGeo: SwitchMaterial? = view.findViewById(R.id.switchGeofence)
         switchGeo?.visibility = View.GONE
         (switchGeo?.parent as? View)?.visibility = View.GONE
 
         tvEmail.text = FirebaseClient.currentUserEmail
 
-        // --- ALAP UI FIGYELŐK ---
+
         viewModel.statusText.observe(viewLifecycleOwner) { tvStatus.text = it }
 
         viewModel.lockStatus.observe(viewLifecycleOwner) { status ->
@@ -76,20 +73,17 @@ class HomeFragment : Fragment() {
             }
             val names = locks.map { it.name.ifEmpty { it.id } }
 
-            // JAVÍTÁS: Levesszük a listenert az Adapter beállítása előtt, hogy ne ugorjon vissza az első elemre
             spinnerLocks.onItemSelectedListener = null
 
             spinnerLocks.adapter = ArrayAdapter(
                 requireContext(), android.R.layout.simple_spinner_item, names
             ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
 
-            // JAVÍTÁS: Megkeressük, hányadik a listában a jelenleg kiválasztott zár, és oda tekerjük a Spinnert
             val selectedIndex = locks.indexOfFirst { it.id == viewModel.currentLockId }
             if (selectedIndex >= 0) {
                 spinnerLocks.setSelection(selectedIndex, false) // A 'false' kikapcsolja a felesleges animációt
             }
 
-            // Visszatesszük a listenert
             spinnerLocks.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
                     viewModel.selectLock(locks[pos].id)
@@ -102,7 +96,7 @@ class HomeFragment : Fragment() {
             btnManage.visibility = if (role == "owner") View.VISIBLE else View.GONE
         }
 
-        // --- GOMBOK ---
+
         btnOpen.setOnClickListener { viewModel.sendCommand("OPEN") }
         btnClose.setOnClickListener { viewModel.sendCommand("CLOSE") }
 
@@ -120,24 +114,23 @@ class HomeFragment : Fragment() {
             }
         }
 
-        // --- UI FRISSÍTÉS A SZENZORFÚZIÓ (VALÓDI ÁLLAPOT) ALAPJÁN ---
         viewModel.unifiedStateText.observe(viewLifecycleOwner) { unifiedText ->
-            // Fentre, az email cím alá kiírjuk a gyönyörű, pontos állapotot
+
             val email = FirebaseClient.auth.currentUser?.email ?: ""
             tvEmail.text = "$email\n$unifiedText"
 
-            // Lentre a GPS kártyára is rátesszük
+
             val currentDist = viewModel.geofenceStatusText.value ?: "GPS: -"
             tvGeoStatus.text = "$unifiedText\n$currentDist"
         }
 
         viewModel.geofenceStatusText.observe(viewLifecycleOwner) { distanceText ->
-            // Ha csak a méterek változnak, frissítjük a lenti kártyát
+
             val unifiedText = viewModel.unifiedStateText.value ?: ""
             tvGeoStatus.text = "$unifiedText\n$distanceText"
         }
 
-        // Toast üzenetek megjelenítése a ViewModelből
+
         viewModel.toastMessage.observe(viewLifecycleOwner) { msg ->
             if (!msg.isNullOrEmpty()) {
                 Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
@@ -145,12 +138,12 @@ class HomeFragment : Fragment() {
             }
         }
 
-        // --- HIBRID MÓD KAPCSOLÓ (GPS + BLE) ---
+
         switchHybrid.setOnCheckedChangeListener(null) // Biztos, ami biztos, levesszük a figyelőt
         switchHybrid.isChecked = viewModel.isHybridModeEnabled
         layoutGeo.visibility = if (viewModel.isHybridModeEnabled) View.VISIBLE else View.GONE
 
-        // 2. Csak ezután kötjük be az eseményfigyelőt
+
         switchHybrid.setOnCheckedChangeListener { _, checked ->
             layoutGeo.visibility = if (checked) View.VISIBLE else View.GONE
 
@@ -178,7 +171,7 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // --- JOGOSULTSÁG KEZELÉS ---
+
     private fun hasLocationPermission() =
         ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
 

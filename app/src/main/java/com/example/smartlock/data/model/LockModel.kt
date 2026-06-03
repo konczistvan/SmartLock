@@ -8,6 +8,6 @@ data class LockModel(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val addedBy: String = "",
-    val beaconUUID: String = "",       // NEW: phone beacon UUID for this lock
-    val activated: Boolean = false      // NEW: whether lock has been activated
+    val beaconUUID: String = "",
+    val activated: Boolean = false
 )

@@ -22,7 +22,6 @@ class SettingsFragment : Fragment() {
 
     private val viewModel: MainViewModel by activityViewModels()
 
-    // ÚJ: Listener a valós idejű debughoz
     private var debugListener: ValueEventListener? = null
     private var lockId: String = ""
 
@@ -42,31 +41,29 @@ class SettingsFragment : Fragment() {
         lockId = viewModel.currentLockId
         if (lockId.isEmpty()) {
             Toast.makeText(requireContext(), "Please select a lock on the Home screen first!", Toast.LENGTH_LONG).show()
-            // Opcionális: Ha nincs zár, el is rejthetjük a csúszkákat, de a visszatérés (return) most megvédi a kódot a fagyástól.
             return
         }
 
-        // --- ÚJ: LIVE DEBUG FIGYELŐ BEKÖTÉSE ---
         val tvLiveDebug = view.findViewById<TextView>(R.id.tvLiveDebug)
         val debugRef = FirebaseClient.getReference("locks/$lockId/telemetry/live_debug")
 
         debugListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val debugText = snapshot.getValue(String::class.java) ?: "Nincs adat"
-                if (isAdded) { // Biztonsági ellenőrzés, hogy a fragment még él-e
+                if (isAdded) {
                     tvLiveDebug.text = debugText
                 }
             }
             override fun onCancelled(error: DatabaseError) {}
         }
         debugRef.addValueEventListener(debugListener!!)
-        // ----------------------------------------
 
-        // ---- BLE RSSI ----
+
+        // BLE RSSI
         val tvBle = view.findViewById<TextView>(R.id.tvBleValue)
         val seekBle = view.findViewById<SeekBar>(R.id.seekBarBle)
 
-        // Itt már a lockId-vel keressük a mentett értéket!
+
         val savedBle = prefs.getInt("ble_rssi_$lockId", -80)
         seekBle.progress = savedBle + 100
         tvBle.text = "$savedBle dBm"
@@ -85,7 +82,7 @@ class SettingsFragment : Fragment() {
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
 
-        // ---- GEOFENCE RADIUS ----
+        // Geofence
         val tvGeo = view.findViewById<TextView>(R.id.tvGeoValue)
         val seekGeo = view.findViewById<SeekBar>(R.id.seekBarGeo)
 
@@ -106,7 +103,7 @@ class SettingsFragment : Fragment() {
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
 
-        // ---- DEADZONE RADIUS ----
+
         val tvDead = view.findViewById<TextView>(R.id.tvDeadzoneValue)
         val seekDead = view.findViewById<SeekBar>(R.id.seekBarDeadzone)
 
@@ -135,7 +132,6 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    // ÚJ: Le kell iratkozni a Firebase figyelőről, ha elhagyjuk a Settings oldalt!
     override fun onDestroyView() {
         super.onDestroyView()
         debugListener?.let { listener ->
