@@ -45,7 +45,6 @@ class MainViewModel : ViewModel() {
     var isHybridModeEnabled = false
         private set
 
-    // --- TWO-TIER STATE ---
     // BLE is primary. GPS is only an energy-saving hint that PAUSES BLE when we're
     // confidently far away. Default is "armed" so it works immediately at the door.
     private var insideRadius = false
@@ -167,18 +166,16 @@ class MainViewModel : ViewModel() {
     fun selectLock(lockId: String) {
         if (lockId == currentLockId) return
 
-        // Pause proximity on the OLD lock before switching
         if (isHybridModeEnabled) setProximityFlag(false)
 
         currentLockId = lockId
         pendingManualOpen = false
 
-        // Reset per-lock geofence state
         lockLocation = null
         lastDistanceMeters = null
         lastFixTrustworthy = false
         awayCandidateSince = 0L
-        insideRadius = isHybridModeEnabled // default armed if hybrid is on
+        insideRadius = isHybridModeEnabled
 
         val newLockName = myLocks.find { it.id == lockId }?.name ?: lockId
         _statusText.postValue("[$newLockName]\nLoading...")
@@ -195,7 +192,7 @@ class MainViewModel : ViewModel() {
 
         listenToCurrentLockStatus()
         if (isHybridModeEnabled) {
-            startBleAdvertising() // arm the NEW lock
+            startBleAdvertising()
             fetchLockLocation()
         }
         refreshUnifiedState()
@@ -263,7 +260,7 @@ class MainViewModel : ViewModel() {
         _unifiedStateText.postValue(text)
     }
 
-    // --- HYBRID CONTROL ---
+
     // Enabling it arms BLE IMMEDIATELY (default = home). GPS only pauses BLE when
     // we're confidently far away (handled in the location callback).
     fun setHybridMode(enabled: Boolean) {
@@ -305,7 +302,6 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    // --- GEOFENCE (energy-saving hint, never disables BLE on noise) ---
     fun fetchLockLocation() {
         lockRepository.fetchLockLocation(
             lockId = currentLockId,
@@ -348,34 +344,32 @@ class MainViewModel : ViewModel() {
                 lastDistanceMeters = distanceMeters
 
                 val enterR = geofenceRadiusMeters
-                // Exit radius is much larger than enter radius (hysteresis), min radius+60m.
+
                 val exitR = (geofenceRadiusMeters * 2f).coerceAtLeast(geofenceRadiusMeters + 60f)
-                // A fix is only trusted if its accuracy is better than the exit radius.
+
                 val acc = if (myLocation.hasAccuracy()) myLocation.accuracy else exitR + 1f
                 lastFixTrustworthy = acc <= exitR
 
                 if (lastFixTrustworthy) {
                     when {
                         distanceMeters <= enterR -> {
-                            // Clearly inside -> arm
+
                             awayCandidateSince = 0L
                             insideRadius = true
                         }
                         distanceMeters > exitR -> {
-                            // Possibly away -> require it to be sustained before pausing BLE
+
                             val nowMs = System.currentTimeMillis()
                             if (awayCandidateSince == 0L) awayCandidateSince = nowMs
                             else if (nowMs - awayCandidateSince >= AWAY_GRACE_MS) insideRadius = false
                         }
                         else -> {
-                            // Hysteresis band -> not clearly away; keep current state
+
                             awayCandidateSince = 0L
                         }
                     }
                 }
-                // Untrustworthy fix (typical indoors) -> keep current state (stays armed)
 
-                // Drive BLE only on a real transition (avoids spamming Firebase)
                 if (insideRadius && !isAdvertising) startBleAdvertising()
                 else if (!insideRadius && isAdvertising) stopBleAdvertising()
 

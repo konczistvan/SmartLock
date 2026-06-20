@@ -149,17 +149,15 @@ class BleAdvertiserService : Service() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "SmartLock BLE",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "BLE beacon signal for auto-unlock"
-            }
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "SmartLock BLE",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "BLE beacon signal for auto-unlock"
         }
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
     }
 
     private fun createNotification(): Notification {
