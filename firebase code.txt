@@ -1,0 +1,55 @@
+{
+  "rules": {
+    "users": {
+      ".read": "auth != null",
+      ".indexOn": ["email"],
+      "$uid": {
+        ".write": "auth.uid === $uid"
+      }
+    },
+
+    "locks": {
+      "$lockId": {
+        ".read": "root.child('permissions').child($lockId).child(auth.uid).exists() || root.child('deviceAccounts').child(auth.uid).exists()",
+        ".write": "root.child('permissions').child($lockId).child(auth.uid).exists() || root.child('deviceAccounts').child(auth.uid).exists() || (!data.exists() && auth != null)",
+        "command": {
+          ".validate": "newData.val() === 'OPEN' || newData.val() === 'CLOSE' || newData.val() === 'NONE'"
+        },
+        "owner": {
+          ".validate": "newData.val() === auth.uid || data.exists() || root.child('deviceAccounts').child(auth.uid).exists()"
+        },
+        "activated": {
+          ".validate": "newData.isBoolean()"
+        },
+        "beaconUUID": {
+          ".validate": "newData.isString() && newData.val().length >= 16"
+        }
+      }
+    },
+
+    "deviceAccounts": {
+      ".read": "auth != null",
+      ".write": false
+    },
+
+    "permissions": {
+      ".read": "auth != null",
+      "$lockId": {
+        ".write": "root.child('permissions').child($lockId).child(auth.uid).child('role').val() === 'owner' || (!data.exists() && newData.child(auth.uid).child('role').val() === 'owner') || root.child('deviceAccounts').child(auth.uid).exists()"
+      }
+    },
+
+    "logs": {
+      ".read": "auth != null",
+      ".indexOn": ["lock_id"],
+      "$logId": {
+        ".write": "auth != null && !data.exists() && newData.exists()"
+      }
+    },
+
+    "measurements": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}
