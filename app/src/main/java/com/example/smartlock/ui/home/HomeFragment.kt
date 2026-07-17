@@ -50,7 +50,8 @@ class HomeFragment : Fragment() {
         val btnSetLocation: Button = view.findViewById(R.id.btnSetLockLocation)
         val btnLogout: View = view.findViewById(R.id.btnLogout)
         val layoutLockSelector: View = view.findViewById(R.id.layoutLockSelector)
-        // The separate geofence switch is not used — the Auto-Unlock switch is the master gate.
+
+        // A külön geofence switch nincs használatban — az Auto-Unlock switch a központi vezérlő.
         val switchGeo: SwitchMaterial? = view.findViewById(R.id.switchGeofence)
         switchGeo?.visibility = View.GONE
         (switchGeo?.parent as? View)?.visibility = View.GONE
@@ -97,7 +98,7 @@ class HomeFragment : Fragment() {
             }
         }
 
-        // The geofence card (visible only when hybrid is on) shows the unified system-state line.
+        // A geofence kártya mutatja az egyesített rendszerállapotot
         viewModel.unifiedStateText.observe(viewLifecycleOwner) { stateText ->
             tvGeoStatus.text = stateText
         }
@@ -109,26 +110,31 @@ class HomeFragment : Fragment() {
             }
         }
 
-        switchHybrid.setOnCheckedChangeListener(null) // Remove the listener first, just to be safe
-        switchHybrid.isChecked = viewModel.isHybridModeEnabled
-        layoutGeo.visibility = if (viewModel.isHybridModeEnabled) View.VISIBLE else View.GONE
+        // --- KÉTIRÁNYÚ GOMB-AUTOMATIZÁCIÓ INTEGRÁCIÓJA ---
+        // Feliratkozunk a háttérből érkező állapotváltozásokra (GPS alapú le/felkapcsolás)
+        viewModel.bleSwitchState.observe(viewLifecycleOwner) { isBleRunning ->
+            switchHybrid.setOnCheckedChangeListener(null) // Ideiglenesen leoldjuk a figyelőt, hogy elkerüljük a végtelen hurkot
+            switchHybrid.isChecked = isBleRunning
+            layoutGeo.visibility = if (viewModel.isHybridModeEnabled) View.VISIBLE else View.GONE
 
-        switchHybrid.setOnCheckedChangeListener { _, checked ->
-            layoutGeo.visibility = if (checked) View.VISIBLE else View.GONE
+            // Újraregisztráljuk az eseményfigyelőt a felhasználói kézi interakciók kezeléséhez
+            switchHybrid.setOnCheckedChangeListener { _, checked ->
+                layoutGeo.visibility = if (checked) View.VISIBLE else View.GONE
 
-            if (checked) {
-                if (hasBluetoothPermissions() && hasLocationPermission()) {
-                    viewModel.setHybridMode(true)
-                    viewModel.fetchLockLocation()
-                    viewModel.startLocationUpdates(requireContext())
-                    Toast.makeText(requireContext(), "Auto-Unlock enabled — it activates when you're near home", Toast.LENGTH_SHORT).show()
+                if (checked) {
+                    if (hasBluetoothPermissions() && hasLocationPermission()) {
+                        viewModel.setHybridMode(true)
+                        viewModel.fetchLockLocation()
+                        viewModel.startLocationUpdates(requireContext())
+                        Toast.makeText(requireContext(), "Auto-Unlock élesítve! Nyitás, ha a közelben vagy.", Toast.LENGTH_SHORT).show()
+                    } else {
+                        requestAllPermissions()
+                        switchHybrid.isChecked = false
+                    }
                 } else {
-                    requestAllPermissions()
-                    switchHybrid.isChecked = false
+                    viewModel.setHybridMode(false)
+                    viewModel.stopLocationUpdates()
                 }
-            } else {
-                viewModel.setHybridMode(false)
-                viewModel.stopLocationUpdates()
             }
         }
 

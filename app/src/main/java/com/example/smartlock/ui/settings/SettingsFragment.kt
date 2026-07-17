@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
@@ -14,15 +15,10 @@ import com.example.smartlock.R
 import com.example.smartlock.api.FirebaseClient
 import com.example.smartlock.ui.login.LoginActivity
 import com.example.smartlock.ui.main.MainViewModel
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
 
 class SettingsFragment : Fragment() {
 
     private val viewModel: MainViewModel by activityViewModels()
-
-    private var debugListener: ValueEventListener? = null
     private var lockId: String = ""
 
     override fun onCreateView(inflater: LayoutInflater, c: ViewGroup?, s: Bundle?): View =
@@ -44,25 +40,29 @@ class SettingsFragment : Fragment() {
             return
         }
 
-        val tvLiveDebug = view.findViewById<TextView>(R.id.tvLiveDebug)
-        val debugRef = FirebaseClient.getReference("locks/$lockId/telemetry/live_debug")
+        // --- COOLDOWN VISSZASZÁMLÁLÓ ÉS RESET ---
+        val layoutCooldown = view.findViewById<View>(R.id.layoutCooldown)
+        val tvCooldownCountdown = view.findViewById<TextView>(R.id.tvCooldownCountdown)
+        val btnResetCooldown = view.findViewById<Button>(R.id.btnResetCooldown)
 
-        debugListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val debugText = snapshot.getValue(String::class.java) ?: "No data"
-                if (isAdded) {
-                    tvLiveDebug.text = debugText
-                }
+        viewModel.cooldownLeftLive.observe(viewLifecycleOwner) { secondsLeft ->
+            if (secondsLeft > 0) {
+                layoutCooldown?.visibility = View.VISIBLE
+                tvCooldownCountdown?.text = "BLE Auto-Unlock Cooldown: $secondsLeft mp"
+            } else {
+                layoutCooldown?.visibility = View.GONE
             }
-            override fun onCancelled(error: DatabaseError) {}
         }
-        debugRef.addValueEventListener(debugListener!!)
+
+        btnResetCooldown?.setOnClickListener {
+            viewModel.resetCooldown()
+            Toast.makeText(requireContext(), "Zár azonnal újraélesítve!", Toast.LENGTH_SHORT).show()
+        }
 
 
-        // BLE RSSI
+        // --- BLE RSSI BEÁLLÍTÁS ---
         val tvBle = view.findViewById<TextView>(R.id.tvBleValue)
         val seekBle = view.findViewById<SeekBar>(R.id.seekBarBle)
-
 
         val savedBle = prefs.getInt("ble_rssi_$lockId", -80)
         seekBle.progress = savedBle + 100
@@ -82,7 +82,7 @@ class SettingsFragment : Fragment() {
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
 
-        // Geofence
+        // --- GEOFENCE RADIUS BEÁLLÍTÁS ---
         val tvGeo = view.findViewById<TextView>(R.id.tvGeoValue)
         val seekGeo = view.findViewById<SeekBar>(R.id.seekBarGeo)
 
@@ -103,7 +103,8 @@ class SettingsFragment : Fragment() {
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
 
-        view.findViewById<android.widget.Button>(R.id.btnLogout).setOnClickListener {
+        // --- LOGOUT ---
+        view.findViewById<Button>(R.id.btnLogout).setOnClickListener {
             viewModel.authRepository.logout()
             startActivity(Intent(requireContext(), LoginActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -113,10 +114,6 @@ class SettingsFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        debugListener?.let { listener ->
-            if (lockId.isNotEmpty()) {
-                FirebaseClient.getReference("locks/$lockId/telemetry/live_debug").removeEventListener(listener)
-            }
-        }
+        // A debugListener eltávolítva, nincs szükség takarításra itt
     }
 }

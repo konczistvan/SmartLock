@@ -152,7 +152,7 @@ void loop() {
     lastStatTime = now;
   }
 
-  // Biztonsagi ujrainditas, ha valamiert leallt volna
+
   if (!pScan->isScanning()) {
     pScan->start(0);
   }

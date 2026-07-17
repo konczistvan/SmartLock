@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.location.Location
+import android.os.CountDownTimer
 import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.LiveData
@@ -17,13 +18,14 @@ import com.example.smartlock.data.repository.LogRepository
 import com.example.smartlock.data.repository.PermissionRepository
 import com.example.smartlock.service.BleAdvertiserService
 import com.google.android.gms.location.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
 
 class MainViewModel : ViewModel() {
 
     private val TAG = "MainViewModel"
-
-    // How long the phone must be CONFIDENTLY outside the exit radius before BLE is paused.
-    private val AWAY_GRACE_MS = 60_000L
 
     private val lockRepository = LockRepository()
     private val logRepository = LogRepository()
@@ -45,12 +47,20 @@ class MainViewModel : ViewModel() {
     var isHybridModeEnabled = false
         private set
 
-    // BLE is primary. GPS is only an energy-saving hint that PAUSES BLE when we're
-    // confidently far away. Default is "armed" so it works immediately at the door.
     private var insideRadius = false
     private var lastDistanceMeters: Float? = null
     private var lastFixTrustworthy = false
     private var awayCandidateSince = 0L
+
+    private val _bleSwitchState = MutableLiveData<Boolean>(false)
+    val bleSwitchState: LiveData<Boolean> = _bleSwitchState
+
+    private val _cooldownLeft = MutableLiveData<Int>(0)
+    val cooldownLeftLive: LiveData<Int> = _cooldownLeft
+
+    private var cooldownTimer: CountDownTimer? = null
+    private var cooldownRef: DatabaseReference? = null
+    private var cooldownListener: ValueEventListener? = null
 
     private val _locksLoaded = MutableLiveData(false)
     val locksLoaded: LiveData<Boolean> = _locksLoaded
@@ -128,6 +138,7 @@ class MainViewModel : ViewModel() {
                     _currentLockRole.postValue(myRoleForCurrentLock)
 
                     listenToCurrentLockStatus()
+                    listenToCooldown()
                     if (isHybridModeEnabled) fetchLockLocation()
                 }
 
@@ -191,6 +202,7 @@ class MainViewModel : ViewModel() {
         }
 
         listenToCurrentLockStatus()
+        listenToCooldown()
         if (isHybridModeEnabled) {
             startBleAdvertising()
             fetchLockLocation()
@@ -224,14 +236,61 @@ class MainViewModel : ViewModel() {
         )
     }
 
+    fun listenToCooldown() {
+        cooldownListener?.let { cooldownRef?.removeEventListener(it) }
+        if (currentLockId.isEmpty()) return
+
+        cooldownRef = FirebaseClient.getReference("locks/$currentLockId/cooldownActive")
+        cooldownListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val active = snapshot.getValue(Boolean::class.java) ?: false
+                if (active) {
+                    startLocalCooldownTimer(120)
+                } else {
+                    cooldownTimer?.cancel()
+                    _cooldownLeft.postValue(0)
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        cooldownRef?.addValueEventListener(cooldownListener!!)
+    }
+
+    private fun startLocalCooldownTimer(seconds: Int) {
+        cooldownTimer?.cancel()
+        cooldownTimer = object : CountDownTimer((seconds * 1000).toLong(), 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                _cooldownLeft.postValue((millisUntilFinished / 1000).toInt())
+            }
+            override fun onFinish() {
+                _cooldownLeft.postValue(0)
+                if (currentLockId.isNotEmpty()) {
+                    FirebaseClient.getReference("locks/$currentLockId/cooldownActive").setValue(false)
+                }
+            }
+        }.start()
+    }
+
+    fun resetCooldown() {
+        if (currentLockId.isNotEmpty()) {
+            FirebaseClient.getReference("locks/$currentLockId/cooldownActive").setValue(false)
+        }
+    }
+
     private fun checkAndLogEspUnlock() {
         if (currentLockId.isEmpty()) return
-        val ref = FirebaseClient.getReference("locks/$currentLockId/lastUnlockMethod")
-        ref.get().addOnSuccessListener { snap ->
-            val method = snap.getValue(String::class.java)
+        val methodRef = FirebaseClient.getReference("locks/$currentLockId/lastUnlockMethod")
+        val rssiRef = FirebaseClient.getReference("locks/$currentLockId/lastUnlockRssi")
+
+        methodRef.get().addOnSuccessListener { methodSnap ->
+            val method = methodSnap.getValue(String::class.java)
             if (!method.isNullOrEmpty() && method != "NONE") {
-                logRepository.logAccess(currentLockId, method)
-                ref.setValue("NONE")
+                rssiRef.get().addOnSuccessListener { rssiSnap ->
+                    val rssi = rssiSnap.getValue(Int::class.java) ?: 0
+                    logRepository.logAccess(currentLockId, method, rssi)
+                    methodRef.setValue("NONE")
+                    rssiRef.setValue(0)
+                }
             }
         }
     }
@@ -242,12 +301,13 @@ class MainViewModel : ViewModel() {
         else -> status
     }
 
-    // --- UNIFIED STATE TEXT (English, computed purely on the phone) ---
     private fun refreshUnifiedState() {
         val status = _lockStatus.value ?: "LOCKED"
 
         val text = if (!isHybridModeEnabled) {
             mapStatus(status)
+        } else if (lockLocation == null) {
+            "📍 Kérlek, mentsd el a zár helyzetét!"
         } else if (!insideRadius) {
             "🚶 Away — auto-unlock paused"
         } else if (status == "UNLOCKED") {
@@ -260,18 +320,17 @@ class MainViewModel : ViewModel() {
         _unifiedStateText.postValue(text)
     }
 
-
-    // Enabling it arms BLE IMMEDIATELY (default = home). GPS only pauses BLE when
-    // we're confidently far away (handled in the location callback).
     fun setHybridMode(enabled: Boolean) {
         isHybridModeEnabled = enabled
         awayCandidateSince = 0L
         if (enabled) {
             insideRadius = true
             startBleAdvertising()
+            _bleSwitchState.postValue(true)
         } else {
             insideRadius = false
             stopBleAdvertising()
+            _bleSwitchState.postValue(false)
         }
         refreshUnifiedState()
     }
@@ -291,11 +350,11 @@ class MainViewModel : ViewModel() {
             BleAdvertiserService.start(ctx, beaconUUID)
             isAdvertising = true
         }
-        setProximityFlag(true) // tell the ESP to start scanning (for the current lock)
+        setProximityFlag(true)
     }
 
     private fun stopBleAdvertising() {
-        setProximityFlag(false) // tell the ESP to stop scanning
+        setProximityFlag(false)
         if (isAdvertising) {
             appContext?.let { BleAdvertiserService.stop(it) }
             isAdvertising = false
@@ -311,7 +370,7 @@ class MainViewModel : ViewModel() {
             },
             onFailure = { err ->
                 Log.w(TAG, "Lock location unavailable: $err")
-                lockLocation = null // no GPS -> stay armed, BLE stays on
+                lockLocation = null
                 lastFixTrustworthy = false
                 refreshUnifiedState()
             }
@@ -321,57 +380,77 @@ class MainViewModel : ViewModel() {
     @SuppressLint("MissingPermission")
     fun saveCurrentLocationAsLock(context: Context) {
         if (currentLockId.isEmpty()) return
+        _toastMessage.postValue("Koordináták lekérése...")
+
         fusedLocationClient?.lastLocation?.addOnSuccessListener { location ->
             if (location != null) {
-                val lockRef = FirebaseClient.getReference("locks/$currentLockId/location")
-                lockRef.child("lat").setValue(location.latitude)
-                lockRef.child("lng").setValue(location.longitude)
+                uploadLockLocation(location)
+            } else {
+                fusedLocationClient?.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
+                    ?.addOnSuccessListener { freshLocation ->
+                        if (freshLocation != null) {
+                            uploadLockLocation(freshLocation)
+                        } else {
+                            _toastMessage.postValue("Sikertelen helymeghatározás. Kapcsold be a GPS-t!")
+                        }
+                    }?.addOnFailureListener { e ->
+                        _toastMessage.postValue("GPS Hiba: ${e.message}")
+                    }
+            }
+        }?.addOnFailureListener { e ->
+            _toastMessage.postValue("Hiba: ${e.message}")
+        }
+    }
+
+    private fun uploadLockLocation(location: Location) {
+        val lockRef = FirebaseClient.getReference("locks/$currentLockId/location")
+        val locationMap = mapOf(
+            "lat" to location.latitude,
+            "lng" to location.longitude
+        )
+
+        lockRef.setValue(locationMap)
+            .addOnSuccessListener {
                 lockLocation = location
-                _toastMessage.postValue("Lock location saved!")
+                _toastMessage.postValue("Zár helyzete elmentve a Firebase-be!")
                 refreshUnifiedState()
             }
-        }
+            .addOnFailureListener { e ->
+                _toastMessage.postValue("Sikertelen Firebase mentés: ${e.message}")
+                Log.e(TAG, "Hiba a helyzet mentésekor", e)
+            }
     }
 
     private fun setupLocationCallback() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val myLocation = result.lastLocation ?: return
-                val target = lockLocation ?: return // no lock GPS -> stay armed
+                val target = lockLocation ?: return
                 if (!isHybridModeEnabled) return
 
                 val distanceMeters = myLocation.distanceTo(target)
                 lastDistanceMeters = distanceMeters
 
                 val enterR = geofenceRadiusMeters
+                val exitR = geofenceRadiusMeters
 
-                val exitR = (geofenceRadiusMeters * 2f).coerceAtLeast(geofenceRadiusMeters + 60f)
-
-                val acc = if (myLocation.hasAccuracy()) myLocation.accuracy else exitR + 1f
-                lastFixTrustworthy = acc <= exitR
+                val acc = if (myLocation.hasAccuracy()) myLocation.accuracy else 25f
+                lastFixTrustworthy = acc <= 30f
 
                 if (lastFixTrustworthy) {
                     when {
                         distanceMeters <= enterR -> {
-
-                            awayCandidateSince = 0L
                             insideRadius = true
+                            if (!isAdvertising) startBleAdvertising()
+                            _bleSwitchState.postValue(true)
                         }
                         distanceMeters > exitR -> {
-
-                            val nowMs = System.currentTimeMillis()
-                            if (awayCandidateSince == 0L) awayCandidateSince = nowMs
-                            else if (nowMs - awayCandidateSince >= AWAY_GRACE_MS) insideRadius = false
-                        }
-                        else -> {
-
-                            awayCandidateSince = 0L
+                            insideRadius = false
+                            stopBleAdvertising()
+                            _bleSwitchState.postValue(false)
                         }
                     }
                 }
-
-                if (insideRadius && !isAdvertising) startBleAdvertising()
-                else if (!insideRadius && isAdvertising) stopBleAdvertising()
 
                 refreshUnifiedState()
             }
@@ -393,8 +472,11 @@ class MainViewModel : ViewModel() {
     fun setGeofenceRadius(meters: Float) { geofenceRadiusMeters = meters }
 
     fun onToastShown() { _toastMessage.value = null }
+
     override fun onCleared() {
         super.onCleared()
+        cooldownTimer?.cancel()
+        cooldownListener?.let { cooldownRef?.removeEventListener(it) }
         lockRepository.stopListening()
         stopLocationUpdates()
         appContext?.let { BleAdvertiserService.stop(it) }
